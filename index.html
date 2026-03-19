@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DQ Türkiye — Qlik Proje Analizörü</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --navy: #0A2240;
+    --teal: #007A87;
+    --teal-light: #E6F4F5;
+    --teal-mid: #b2dde2;
+    --gray: #F5F5F5;
+    --gray-border: #E0E0E0;
+    --gray-text: #666;
+    --red: #C62828;
+    --red-bg: #FFEBEE;
+    --amber: #E65100;
+    --amber-bg: #FFF3E0;
+    --green: #1B5E20;
+    --green-bg: #E8F5E9;
+    --text: #1a1a1a;
+    --white: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  .header { background: var(--navy); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-dq { font-size: 22px; font-weight: 800; color: var(--teal); letter-spacing: -1px; }
+  .logo-txt { font-size: 13px; color: rgba(255,255,255,.7); font-weight: 400; }
+  .header-right { font-size: 12px; color: rgba(255,255,255,.5); }
+
+  /* LAYOUT */
+  .app { display: grid; grid-template-columns: 300px 1fr; gap: 0; min-height: calc(100vh - 56px); }
+  .sidebar { background: var(--white); border-right: 1px solid var(--gray-border); padding: 1.5rem; overflow-y: auto; }
+  .main { padding: 1.5rem; overflow-y: auto; }
+
+  /* SIDEBAR */
+  .sidebar-title { font-size: 11px; font-weight: 600; color: var(--gray-text); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 1rem; }
+  .field { margin-bottom: 12px; }
+  .field label { font-size: 12px; color: var(--gray-text); display: block; margin-bottom: 4px; }
+  .field input, .field select, .field textarea { width: 100%; font-size: 13px; padding: 8px 10px; border: 1px solid var(--gray-border); border-radius: 6px; background: var(--white); color: var(--text); outline: none; transition: border-color .15s; font-family: inherit; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--teal); }
+  .field textarea { resize: vertical; min-height: 80px; font-size: 12px; }
+  .field .hint { font-size: 11px; color: #aaa; margin-top: 3px; }
+
+  .divider { border: none; border-top: 1px solid var(--gray-border); margin: 1.25rem 0; }
+
+  .api-section { background: var(--gray); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+  .api-section .api-label { font-size: 11px; font-weight: 600; color: var(--gray-text); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .06em; }
+
+  .btn { width: 100%; padding: 10px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .btn-primary { background: var(--teal); color: white; }
+  .btn-primary:hover { background: #005f6a; }
+  .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+  .btn-secondary { background: var(--gray); color: var(--text); border: 1px solid var(--gray-border); margin-top: 8px; }
+  .btn-secondary:hover { background: #e8e8e8; }
+
+  .key-warning { background: var(--amber-bg); border: 1px solid #ffb74d; border-radius: 6px; padding: 10px 12px; font-size: 12px; color: var(--amber); margin-bottom: 12px; display: none; }
+  .key-warning.visible { display: block; }
+
+  /* STEP BAR */
+  .step-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 1.5rem; }
+  .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; border: 2px solid var(--gray-border); background: var(--white); color: var(--gray-text); flex-shrink: 0; transition: all .3s; }
+  .step-dot.active { background: var(--teal); border-color: var(--teal); color: white; }
+  .step-dot.done { background: var(--green); border-color: var(--green); color: white; }
+  .step-line { flex: 1; height: 2px; background: var(--gray-border); transition: background .3s; }
+  .step-line.done { background: var(--green); }
+
+  /* CARDS */
+  .card { background: var(--white); border-radius: 10px; border: 1px solid var(--gray-border); padding: 1.25rem; margin-bottom: 1rem; }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--gray-text); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 1rem; }
+
+  /* METRICS */
+  .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1rem; }
+  .metric { background: var(--teal-light); border-radius: 8px; padding: 1rem; text-align: center; }
+  .metric-val { font-size: 2rem; font-weight: 700; color: var(--navy); }
+  .metric-lbl { font-size: 11px; color: var(--gray-text); margin-top: 2px; }
+
+  /* LOG */
+  .log-box { background: #0d1117; border-radius: 8px; padding: 1rem; font-family: 'Courier New', monospace; font-size: 12px; max-height: 260px; overflow-y: auto; line-height: 1.8; }
+  .log-line { color: #8b949e; }
+  .log-ok { color: #3fb950; }
+  .log-warn { color: #d29922; }
+  .log-err { color: #f85149; }
+  .log-info { color: #58a6ff; }
+
+  /* TABS */
+  .tab-bar { display: flex; gap: 4px; border-bottom: 1px solid var(--gray-border); margin-bottom: 1.25rem; }
+  .tab { padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: none; color: var(--gray-text); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .15s; }
+  .tab:hover { color: var(--teal); }
+  .tab.active { color: var(--teal); border-bottom-color: var(--teal); }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* TABLE */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table th { text-align: left; padding: 9px 12px; border-bottom: 2px solid var(--navy); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--navy); background: var(--teal-light); }
+  .data-table td { padding: 8px 12px; border-bottom: 1px solid var(--gray-border); }
+  .data-table tr:hover td { background: var(--gray); }
+  .data-table .app-name { font-weight: 500; }
+
+  /* BADGE */
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+  .badge-ok { background: var(--green-bg); color: var(--green); }
+  .badge-warn { background: var(--amber-bg); color: var(--amber); }
+  .badge-err { background: var(--red-bg); color: var(--red); }
+
+  /* QVD LAYERS */
+  .qvd-layer { margin-bottom: 1.25rem; }
+  .qvd-layer-name { font-size: 11px; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 2px solid var(--teal); display: inline-block; }
+  .qvd-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .qvd-chip { background: var(--teal-light); border: 1px solid var(--teal-mid); border-radius: 5px; padding: 5px 10px; font-size: 12px; font-family: 'Courier New', monospace; color: var(--navy); }
+  .qvd-chip .qvd-size { color: var(--gray-text); font-size: 11px; margin-left: 6px; }
+
+  /* AI OUTPUT */
+  .ai-box { background: #fafafa; border: 1px solid var(--gray-border); border-left: 3px solid var(--teal); border-radius: 8px; padding: 1.25rem; font-size: 13px; line-height: 1.85; white-space: pre-wrap; max-height: 480px; overflow-y: auto; color: var(--text); }
+
+  /* EXPORT BUTTONS */
+  .export-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .export-card { border: 1px solid var(--gray-border); border-radius: 8px; padding: 1.25rem; text-align: center; cursor: pointer; transition: all .2s; }
+  .export-card:hover { border-color: var(--teal); background: var(--teal-light); }
+  .export-card .export-icon { font-size: 2rem; margin-bottom: 8px; }
+  .export-card .export-title { font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
+  .export-card .export-desc { font-size: 11px; color: var(--gray-text); }
+  .export-card:disabled, .export-card.loading { opacity: .5; cursor: not-allowed; pointer-events: none; }
+
+  /* FILTERS */
+  .filter-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .filter-row input, .filter-row select { font-size: 13px; padding: 7px 10px; border: 1px solid var(--gray-border); border-radius: 6px; background: var(--white); color: var(--text); outline: none; }
+  .filter-row input:focus, .filter-row select:focus { border-color: var(--teal); }
+  .filter-row input { flex: 1; }
+
+  /* CALLOUT */
+  .callout { background: var(--teal-light); border-left: 3px solid var(--teal); border-radius: 0 8px 8px 0; padding: 12px 14px; margin-bottom: 12px; font-size: 13px; line-height: 1.7; }
+  .callout strong { color: var(--navy); display: block; margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+
+  /* STATUS */
+  .status-bar { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--gray-text); margin-top: 10px; min-height: 20px; }
+  .spinner { width: 14px; height: 14px; border: 2px solid var(--gray-border); border-top-color: var(--teal); border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0; display: none; }
+  .spinner.visible { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--gray-text); }
+  .empty-state .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: .4; }
+  .empty-state p { font-size: 14px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--gray-border); }
+    .metric-grid { grid-template-columns: repeat(2,1fr); }
+    .export-grid { grid-template-columns: 1fr; }
+  }
+
+  /* GITHUB BADGE */
+  .gh-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: rgba(255,255,255,.6); text-decoration: none; }
+  .gh-badge:hover { color: white; }
+  .gh-badge svg { width: 16px; height: 16px; fill: currentColor; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <span class="logo-dq">DQ</span>
+    <div>
+      <div style="color:white;font-size:14px;font-weight:600;line-height:1">TÜRKİYE</div>
+      <div class="logo-txt">Qlik Proje Analizörü</div>
+    </div>
+  </div>
+  <a class="gh-badge" href="https://github.com" target="_blank">
+    <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+    GitHub Pages
+  </a>
+</div>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-title">Proje Bilgileri</div>
+
+    <div class="field">
+      <label>Müşteri adı</label>
+      <input id="customer" type="text" placeholder="ABC Holding">
+    </div>
+    <div class="field">
+      <label>Proje adı</label>
+      <input id="project" type="text" placeholder="Yönetim Raporlaması">
+    </div>
+    <div class="field">
+      <label>Danışman notu (isteğe bağlı)</label>
+      <textarea id="notes" placeholder="Arka plan, bilinen sorunlar, özel gereksinimler..."></textarea>
+    </div>
+
+    <hr class="divider">
+    <div class="sidebar-title">QRS API Bağlantısı</div>
+
+    <div class="field">
+      <label>Sunucu adresi</label>
+      <input id="host" type="text" placeholder="https://qlik.sirket.com">
+      <div class="hint">QRS CORS açık olmalı (port 4242)</div>
+    </div>
+    <div class="field">
+      <label>Port</label>
+      <input id="port" type="text" value="4242">
+    </div>
+    <div class="field">
+      <label>Kullanıcı (Directory\Username)</label>
+      <input id="quser" type="text" placeholder="DOMAIN\qlik_service">
+    </div>
+
+    <hr class="divider">
+    <div class="sidebar-title">API Anahtarları</div>
+
+    <div class="api-section">
+      <div class="api-label">Anthropic (Claude AI)</div>
+      <div class="field" style="margin-bottom:0">
+        <input id="anthropic-key" type="password" placeholder="sk-ant-...">
+        <div class="hint">Tarayıcıda tutulur, sunucuya gönderilmez</div>
+      </div>
+    </div>
+
+    <div id="key-warning" class="key-warning">
+      ⚠ Claude AI analizi için Anthropic API anahtarı gerekli. <a href="https://console.anthropic.com" target="_blank" style="color:inherit">console.anthropic.com</a>'dan edinebilirsiniz.
+    </div>
+
+    <button class="btn btn-primary" id="btn-analyze" onclick="startAnalysis()">
+      Analizi Başlat →
+    </button>
+    <button class="btn btn-secondary" onclick="loadDemo()">
+      Demo veriyle test et
+    </button>
+
+    <div class="status-bar">
+      <div class="spinner" id="spinner"></div>
+      <span id="status-txt"></span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- STEP BAR -->
+    <div class="step-bar">
+      <div class="step-dot active" id="s1">1</div>
+      <div class="step-line" id="l1"></div>
+      <div class="step-dot" id="s2">2</div>
+      <div class="step-line" id="l2"></div>
+      <div class="step-dot" id="s3">3</div>
+      <div class="step-line" id="l3"></div>
+      <div class="step-dot" id="s4">4</div>
+      <span style="font-size:12px;color:#aaa;margin-left:8px" id="step-label">Bağlantı bilgilerini girin</span>
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">⚡</div>
+      <p>Sol panelden bağlantı bilgilerini girin<br>ve <strong>Analizi Başlat</strong>'a tıklayın.</p>
+      <p style="margin-top:12px;font-size:12px">veya <a href="#" onclick="loadDemo();return false" style="color:var(--teal)">demo veriyle</a> deneyin.</p>
+    </div>
+
+    <!-- LOG -->
+    <div class="card" id="log-card" style="display:none">
+      <div class="card-title">Analiz Süreci</div>
+      <div class="log-box" id="log"></div>
+    </div>
+
+    <!-- RESULT TABS -->
+    <div id="result-section" style="display:none">
+      <div class="tab-bar">
+        <button class="tab active" onclick="showTab('summary',this)">Özet</button>
+        <button class="tab" onclick="showTab('apps',this)">Uygulamalar</button>
+        <button class="tab" onclick="showTab('qvd',this)">QVD Mimarisi</button>
+        <button class="tab" onclick="showTab('ai',this)">AI Analizi</button>
+        <button class="tab" onclick="showTab('export',this)">Çıktılar</button>
+      </div>
+
+      <!-- SUMMARY -->
+      <div class="panel active" id="panel-summary">
+        <div class="metric-grid" id="metrics"></div>
+        <div class="callout" id="summary-callout"></div>
+      </div>
+
+      <!-- APPS -->
+      <div class="panel" id="panel-apps">
+        <div class="filter-row">
+          <input type="text" id="app-search" placeholder="Uygulama ara..." oninput="filterApps()">
+          <select id="stream-filter" onchange="filterApps()">
+            <option value="">Tüm stream'ler</option>
+          </select>
+          <select id="status-filter" onchange="filterApps()">
+            <option value="">Tüm durumlar</option>
+            <option value="ok">Sağlıklı</option>
+            <option value="warn">Uyarı</option>
+            <option value="err">Sorunlu</option>
+          </select>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="data-table">
+            <thead><tr><th>Uygulama</th><th>Stream</th><th>Son Yükleme</th><th>Boyut</th><th>Durum</th></tr></thead>
+            <tbody id="app-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- QVD -->
+      <div class="panel" id="panel-qvd">
+        <div class="card">
+          <div id="qvd-content"></div>
+        </div>
+      </div>
+
+      <!-- AI -->
+      <div class="panel" id="panel-ai">
+        <div class="callout" style="margin-bottom:1rem">
+          <strong>Danışman Handover Brief</strong>
+          Bu analiz yeni bir danışmana veya Claude konuşmasına yapıştırılabilir.
+        </div>
+        <div class="ai-box" id="ai-output">Analiz bekleniyor...</div>
+      </div>
+
+      <!-- EXPORT -->
+      <div class="panel" id="panel-export">
+        <div class="export-grid">
+          <div class="export-card" id="exp-word" onclick="exportWord()">
+            <div class="export-icon">📄</div>
+            <div class="export-title">Word Raporu</div>
+            <div class="export-desc">Durum analizi, app listesi, QVD mimarisi, öneriler</div>
+          </div>
+          <div class="export-card" id="exp-excel" onclick="exportExcel()">
+            <div class="export-icon">📊</div>
+            <div class="export-title">Excel Envanteri</div>
+            <div class="export-desc">App listesi, QVD tabloları, sağlık metrikleri</div>
+          </div>
+          <div class="export-card" id="exp-brief" onclick="exportBrief()">
+            <div class="export-icon">💬</div>
+            <div class="export-title">Danışman Brief</div>
+            <div class="export-desc">Claude'a yapıştırılacak yapılandırılmış context</div>
+          </div>
+        </div>
+        <div id="export-msg" style="margin-top:1rem;font-size:13px;color:var(--gray-text)"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ─────────────── STATE ─────────────── */
+let state = null;
+
+/* ─────────────── UTILS ─────────────── */
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function setStep(n) {
+  const labels = ['Bağlantı bilgilerini girin','QRS API bağlanıyor...','AI analizi yapılıyor...','Tamamlandı'];
+  for (let i = 1; i <= 4; i++) {
+    const el = $('s'+i);
+    if (i < n) { el.className='step-dot done'; el.textContent='✓'; }
+    else if (i === n) { el.className='step-dot active'; el.textContent=i; }
+    else { el.className='step-dot'; el.textContent=i; }
+    if (i < 4) { const l=$('l'+i); l.className='step-line'+(i<n?' done':''); }
+  }
+  $('step-label').textContent = labels[Math.min(n-1,3)];
+}
+
+function log(msg, type='') {
+  const el = $('log');
+  const cls = {ok:'log-ok',warn:'log-warn',err:'log-err',info:'log-info'}[type]||'log-line';
+  el.innerHTML += `<div class="${cls}">${escHtml(msg)}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function setStatus(txt, spinning=false) {
+  $('status-txt').textContent = txt;
+  $('spinner').className = 'spinner'+(spinning?' visible':'');
+}
+
+function showTab(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  $('panel-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+
+/* ─────────────── DEMO DATA ─────────────── */
+function loadDemo() {
+  $('customer').value = 'ABC Holding';
+  $('project').value = 'Yönetim Raporlaması';
+  $('host').value = 'https://qlik-prod.abcholding.com';
+  $('quser').value = 'DOMAIN\\qlik_service';
+  $('notes').value = 'Proje 2022\'de başladı. QVD katmanları mevcut ama dokümante değil. Section Access bazı app\'lerde eksik. NPrinting entegrasyonu var.';
+  startAnalysis(true);
+}
+
+function makeDemoData() {
+  const streamDefs = [
+    {name:'Finans', count:4},
+    {name:'Satış', count:6},
+    {name:'Üretim', count:3},
+    {name:'İK', count:2},
+    {name:'Operasyon', count:3}
+  ];
+  const statusPool = ['ok','ok','ok','ok','warn','warn','err'];
+  const apps = [];
+  streamDefs.forEach(s => {
+    const suffixes = ['KPI Dashboard','Detay Analiz','Özet Rapor','Veri Kalite','Trend Analiz','Aylık Rapor'];
+    for (let i = 0; i < s.count; i++) {
+      const status = statusPool[Math.floor(Math.random()*statusPool.length)];
+      const daysAgo = status==='err' ? Math.floor(Math.random()*60+20) : status==='warn' ? Math.floor(Math.random()*20+8) : Math.floor(Math.random()*5);
+      const d = new Date(); d.setDate(d.getDate()-daysAgo);
+      apps.push({
+        name: `${s.name} - ${suffixes[i % suffixes.length]}`,
+        stream: s.name,
+        lastReload: d.toLocaleDateString('tr-TR'),
+        size: (Math.floor(Math.random()*700+80))+'MB',
+        status,
+        publishedDate: d.toISOString()
+      });
+    }
+  });
+  const streams = streamDefs.map(s=>({...s, id:'stream-'+s.name}));
+  const qvdLayers = [
+    { name:'Katman 1 — Ham Veri', key:'raw', tables:[
+      {name:'GL_Muhasebe.qvd', size:'340MB', apps:'4'},{name:'SD_Siparis.qvd', size:'820MB', apps:'5'},
+      {name:'HR_Personel.qvd', size:'45MB', apps:'2'},{name:'PP_Uretim.qvd', size:'210MB', apps:'3'}
+    ]},
+    { name:'Katman 2 — Temel Katman', key:'base', tables:[
+      {name:'B_GL_Muhasebe.qvd', size:'290MB', apps:'4'},{name:'B_SD_Siparis.qvd', size:'680MB', apps:'6'},
+      {name:'B_HR_Personel.qvd', size:'38MB', apps:'2'}
+    ]},
+    { name:'Katman 3 — Analitik Mart', key:'mart', tables:[
+      {name:'M_Finans_KPI.qvd', size:'95MB', apps:'3'},{name:'M_Satis_Analiz.qvd', size:'145MB', apps:'4'},
+      {name:'M_Uretim_OEE.qvd', size:'62MB', apps:'2'}
+    ]}
+  ];
+  return { streams, apps, qvdLayers };
+}
+
+/* ─────────────── QRS API ─────────────── */
+async function fetchQRS(host, port, userDir, userId, path) {
+  const url = `${host}:${port}/qrs${path}?xrfkey=abcdefghijklmnop`;
+  const headers = {
+    'X-Qlik-Xrfkey': 'abcdefghijklmnop',
+    'X-Qlik-User': `UserDirectory=${userDir}; UserId=${userId}`,
+    'Content-Type': 'application/json'
+  };
+  const resp = await fetch(url, { headers, credentials: 'include' });
+  if (!resp.ok) throw new Error(`QRS ${resp.status}: ${resp.statusText}`);
+  return resp.json();
+}
+
+function parseUser(raw) {
+  const parts = (raw||'').split('\\');
+  return parts.length>=2 ? {dir:parts[0], id:parts.slice(1).join('\\')} : {dir:'INTERNAL', id:raw||'sa'};
+}
+
+function sizeStr(bytes) {
+  if (!bytes) return '-';
+  const mb = bytes/1024/1024;
+  return mb>1000 ? (mb/1024).toFixed(1)+'GB' : Math.round(mb)+'MB';
+}
+
+async function fetchRealData(host, port, rawUser) {
+  const {dir,id} = parseUser(rawUser);
+  log(`QRS bağlanıyor: ${host}:${port}`, 'info');
+
+  const streams = await fetchQRS(host, port, dir, id, '/stream');
+  log(`✓ ${streams.length} stream bulundu`, 'ok');
+  await sleep(200);
+
+  log('App listesi çekiliyor...', 'info');
+  const apps = await fetchQRS(host, port, dir, id, '/app');
+  log(`✓ ${apps.length} uygulama bulundu`, 'ok');
+  await sleep(200);
+
+  const streamMap = {};
+  streams.forEach(s => streamMap[s.id] = s.name);
+
+  const mappedApps = apps.map(a => {
+    const lastReload = a.lastReloadTime ? new Date(a.lastReloadTime) : null;
+    const daysAgo = lastReload ? Math.floor((Date.now()-lastReload)/86400000) : 999;
+    const status = daysAgo > 30 ? 'err' : daysAgo > 7 ? 'warn' : 'ok';
+    return {
+      name: a.name,
+      stream: streamMap[a.stream?.id] || 'Yayınlanmamış',
+      lastReload: lastReload ? lastReload.toLocaleDateString('tr-TR') : '-',
+      size: sizeStr(a.fileSize),
+      status,
+      publishedDate: a.lastReloadTime
+    };
+  });
+
+  const errCount = mappedApps.filter(a=>a.status==='err').length;
+  const warnCount = mappedApps.filter(a=>a.status==='warn').length;
+  if(errCount) log(`⚠ ${errCount} app 30+ gün yüklenmemiş`, 'err');
+  if(warnCount) log(`⚠ ${warnCount} app 7+ gün yüklenmemiş`, 'warn');
+
+  // QVD: QRS'den data connection üzerinden tespit
+  log('Veri bağlantıları ve QVD yapısı inceleniyor...', 'info');
+  let qvdLayers = [];
+  try {
+    const conns = await fetchQRS(host, port, dir, id, '/dataconnection');
+    const qvdConns = conns.filter(c => c.type==='folder' || (c.connectionstring||'').toLowerCase().includes('qvd'));
+    log(`✓ ${qvdConns.length} QVD bağlantı noktası tespit edildi`, 'ok');
+    qvdLayers = [{name:'QVD Bağlantıları', key:'qvd', tables: qvdConns.slice(0,12).map(c=>({
+      name: c.name+(c.connectionstring?` (${c.connectionstring.slice(0,40)}...)` : ''),
+      size: '-', apps: '-'
+    }))}];
+  } catch(e) {
+    log('QVD detayları çekilemedi (izin gerekebilir)', 'warn');
+    qvdLayers = [{name:'Bilinmiyor', key:'qvd', tables:[]}];
+  }
+
+  const mappedStreams = streams.map(s => ({name:s.name, count: mappedApps.filter(a=>a.stream===s.name).length}));
+  return { streams: mappedStreams, apps: mappedApps, qvdLayers };
+}
+
+/* ─────────────── CLAUDE AI ─────────────── */
+async function runAI(data) {
+  const key = $('anthropic-key').value.trim();
+  const customer = $('customer').value || 'Müşteri';
+  const project = $('project').value || 'Proje';
+  const notes = $('notes').value || '';
+
+  const errApps = data.apps.filter(a=>a.status==='err').map(a=>a.name);
+  const warnApps = data.apps.filter(a=>a.status==='warn').map(a=>a.name);
+  const prompt = `Qlik Sense on-prem projesi için durum analizi yap ve danışman handover brief'i oluştur.
+
+MÜŞTERİ: ${customer}
+PROJE: ${project}
+EK NOTLAR: ${notes||'Yok'}
+
+MEVCUT DURUM:
+- Stream sayısı: ${data.streams.length} (${data.streams.map(s=>s.name+'('+s.count+')').join(', ')})
+- Toplam uygulama: ${data.apps.length}
+- Sorunlu app (30+ gün): ${errApps.length} — ${errApps.join(', ')||'yok'}
+- Uyarılı app (7-30 gün): ${warnApps.length} — ${warnApps.join(', ')||'yok'}
+- QVD katmanları: ${data.qvdLayers.map(l=>l.name).join(' → ')}
+- Toplam QVD tablosu: ${data.qvdLayers.reduce((s,l)=>s+l.tables.length,0)}
+
+Aşağıdaki başlıklarla Türkçe, profesyonel, aksiyon odaklı handover brief yaz (max 500 kelime):
+
+## PROJE ÖZETİ
+## MEVCUT DURUM DEĞERLENDİRMESİ
+## ACİL AKSİYONLAR (en fazla 5 madde, numaralı)
+## GELİŞTİRME ÖNERİLERİ
+## YENİ DANIŞMANA NOTLAR`;
+
+  if (!key) {
+    log('Anthropic API key yok — fallback analiz kullanılıyor', 'warn');
+    return fallbackAnalysis(customer, project, data);
+  }
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'x-api-key': key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system: 'Sen deneyimli bir Qlik Sense danışmanısın. DQ Türkiye adına proje durum analizleri yapıyorsun. Kısa, net, profesyonel Türkçe yaz.',
+      messages: [{ role:'user', content: prompt }]
+    })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(()=>({}));
+    throw new Error(err.error?.message || `API ${resp.status}`);
+  }
+  const json = await resp.json();
+  return json.content?.[0]?.text || fallbackAnalysis(customer, project, data);
+}
+
+function fallbackAnalysis(customer, project, data) {
+  const errApps = data.apps.filter(a=>a.status==='err');
+  const warnApps = data.apps.filter(a=>a.status==='warn');
+  return `## PROJE ÖZETİ
+${customer} – ${project} projesi ${data.streams.length} stream ve ${data.apps.length} uygulama içermektedir. QVD mimarisi ${data.qvdLayers.length} katmanlı yapıdadır.
+
+## MEVCUT DURUM DEĞERLENDİRMESİ
+Güçlü yönler: Stream yapısı iş birimleri bazında organize edilmiş, katmanlı QVD mimarisi mevcut.
+Riskler: ${errApps.length} uygulamada reload 30+ gün gerçekleşmemiş${errApps.length ? ` (${errApps.map(a=>a.name).join(', ')})` : ''}. ${warnApps.length} uygulamada uyarı durumu mevcut.
+
+## ACİL AKSİYONLAR
+1. Sorunlu uygulamaların reload logları incelenmeli ve kök neden analizi yapılmalı
+2. QVD bağımlılık haritası dokümante edilmeli
+3. Section Access konfigürasyonu tüm uygulamalarda doğrulanmalı
+4. Reload scheduler tutarlılığı QMC üzerinden gözden geçirilmeli
+5. Kullanılmayan app ve QVD dosyaları temizlenmeli
+
+## GELİŞTİRME ÖNERİLERİ
+- QVD naming convention standardize edilmeli
+- Operations Monitor uygulaması kurularak merkezi izleme sağlanmalı
+- Reload hata bildirimi (e-posta/Teams) kurulmalı
+- Script versiyonlama için Git entegrasyonu değerlendirilmeli
+
+## YENİ DANIŞMANA NOTLAR
+QMC'ye giriş yaparak reload task listesini ve hata loglarını inceleyin. QVD klasör yapısını fiziksel olarak gözden geçirin. Müşteri IT ekibi ile sertifika ve erişim takvimini netleştirin. Section Access kullanıcı/rol matrisini temin edin.`;
+}
+
+/* ─────────────── MAIN FLOW ─────────────── */
+async function startAnalysis(demo=false) {
+  const key = $('anthropic-key').value.trim();
+  if (!key) $('key-warning').classList.add('visible');
+  else $('key-warning').classList.remove('visible');
+
+  $('btn-analyze').disabled = true;
+  setStatus('Analiz başlatılıyor...', true);
+  $('empty-state').style.display = 'none';
+  $('log-card').style.display = 'block';
+  $('result-section').style.display = 'none';
+  $('log').innerHTML = '';
+  setStep(2);
+
+  try {
+    let data;
+    if (demo) {
+      log('Demo modu — simüle veri yükleniyor', 'info');
+      await sleep(300);
+      log('✓ 5 stream bulundu', 'ok');
+      await sleep(200);
+      log('✓ 18 uygulama bulundu', 'ok');
+      await sleep(200);
+      log('⚠ 2 app 30+ gün yüklenmemiş', 'err');
+      log('⚠ 3 app 7+ gün yüklenmemiş', 'warn');
+      await sleep(200);
+      log('✓ QVD mimarisi tespit edildi (3 katman, 10 tablo)', 'ok');
+      data = makeDemoData();
+    } else {
+      const host = ($('host').value||'').replace(/\/+$/,'');
+      const port = $('port').value || '4242';
+      const rawUser = $('quser').value;
+      if (!host) { throw new Error('Sunucu adresi gerekli'); }
+      data = await fetchRealData(host, port, rawUser);
+    }
+
+    setStep(3);
+    log('Claude AI analizi başlatılıyor...', 'info');
+    setStatus('AI analizi yapılıyor...', true);
+    const aiText = await runAI(data);
+    log('✓ AI analizi tamamlandı', 'ok');
+
+    state = {
+      customer: $('customer').value || 'Müşteri',
+      project: $('project').value || 'Proje',
+      notes: $('notes').value,
+      host: $('host').value,
+      ...data,
+      aiText,
+      date: new Date().toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'})
+    };
+
+    setStep(4);
+    renderResults();
+    $('result-section').style.display = 'block';
+    setStatus('Analiz tamamlandı ✓', false);
+
+  } catch(e) {
+    log('HATA: '+e.message, 'err');
+    setStatus('Hata: '+e.message, false);
+    console.error(e);
+  }
+  $('btn-analyze').disabled = false;
+}
+
+/* ─────────────── RENDER ─────────────── */
+function renderResults() {
+  const {streams, apps, qvdLayers, aiText, customer, project} = state;
+  const ok = apps.filter(a=>a.status==='ok').length;
+  const warn = apps.filter(a=>a.status==='warn').length;
+  const err = apps.filter(a=>a.status==='err').length;
+  const totalQvd = qvdLayers.reduce((s,l)=>s+l.tables.length,0);
+
+  // Metrics
+  $('metrics').innerHTML = [
+    {val:streams.length, lbl:'Stream'},
+    {val:apps.length, lbl:'Uygulama'},
+    {val:totalQvd, lbl:'QVD Tablosu'},
+    {val:err+warn, lbl:'Dikkat Gerektiren'}
+  ].map(m=>`<div class="metric"><div class="metric-val">${m.val}</div><div class="metric-lbl">${m.lbl}</div></div>`).join('');
+
+  // Callout
+  const health = err>0?`⚠ ${err} sorunlu, ${warn} uyarılı uygulama var` : warn>0?`${warn} uyarılı uygulama var` : '✓ Tüm uygulamalar sağlıklı';
+  $('summary-callout').innerHTML = `<strong>${customer} — ${project}</strong>${streams.length} stream, ${apps.length} uygulama, ${qvdLayers.length} katmanlı QVD mimarisi. ${health}.`;
+
+  // Apps table
+  window._apps = apps;
+  const streamSel = $('stream-filter');
+  streamSel.innerHTML = '<option value="">Tüm stream\'ler</option>';
+  [...new Set(apps.map(a=>a.stream))].forEach(s=>{
+    const o=document.createElement('option'); o.value=s; o.textContent=s; streamSel.appendChild(o);
+  });
+  filterApps();
+
+  // QVD
+  $('qvd-content').innerHTML = qvdLayers.map(layer=>`
+    <div class="qvd-layer">
+      <div class="qvd-layer-name">${escHtml(layer.name)}</div>
+      <div class="qvd-chips">
+        ${layer.tables.length ? layer.tables.map(t=>`<div class="qvd-chip">${escHtml(t.name)}<span class="qvd-size">${t.size}${t.apps!=='-'?' · '+t.apps+' app':''}</span></div>`).join('') : '<span style="color:#aaa;font-size:12px">Tablo tespit edilemedi</span>'}
+      </div>
+    </div>
+  `).join('');
+
+  // AI
+  $('ai-output').textContent = aiText;
+}
+
+function filterApps() {
+  const q = ($('app-search').value||'').toLowerCase();
+  const sf = $('stream-filter').value;
+  const stf = $('status-filter').value;
+  const filtered = (window._apps||[]).filter(a=>
+    (!q || a.name.toLowerCase().includes(q) || a.stream.toLowerCase().includes(q)) &&
+    (!sf || a.stream===sf) &&
+    (!stf || a.status===stf)
+  );
+  const badges = {ok:'badge-ok',warn:'badge-warn',err:'badge-err'};
+  const labels = {ok:'Sağlıklı',warn:'Uyarı',err:'Sorunlu'};
+  $('app-tbody').innerHTML = filtered.map(a=>`
+    <tr>
+      <td class="app-name">${escHtml(a.name)}</td>
+      <td style="color:var(--gray-text)">${escHtml(a.stream)}</td>
+      <td style="color:var(--gray-text)">${escHtml(a.lastReload)}</td>
+      <td style="color:var(--gray-text)">${escHtml(a.size)}</td>
+      <td><span class="badge ${badges[a.status]}">${labels[a.status]}</span></td>
+    </tr>
+  `).join('');
+}
+
+/* ─────────────── WORD EXPORT ─────────────── */
+async function exportWord() {
+  if (!state) return;
+  const card = $('exp-word');
+  card.classList.add('loading');
+  $('export-msg').textContent = 'Word raporu oluşturuluyor...';
+  try {
+    const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+            AlignmentType, BorderStyle, WidthType, ShadingType, LevelFormat,
+            PageNumber, Footer, Header, HeadingLevel } = docx;
+
+    const NAVY='0A2240', TEAL='007A87', TEAL_L='E6F4F5', GRAY='F5F5F5';
+    const b0={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+    const noBord={top:b0,bottom:b0,left:b0,right:b0};
+
+    const H = txt => new Paragraph({
+      children:[new TextRun({text:txt,bold:true,size:28,color:NAVY,font:'Arial'})],
+      spacing:{before:360,after:120},
+      border:{bottom:{style:BorderStyle.SINGLE,size:6,color:TEAL,space:4}}
+    });
+    const H2 = txt => new Paragraph({
+      children:[new TextRun({text:txt,bold:true,size:22,color:NAVY,font:'Arial'})],
+      spacing:{before:200,after:80}
+    });
+    const P = (txt,color='333333') => new Paragraph({
+      children:[new TextRun({text:txt,size:20,color,font:'Arial'})],
+      spacing:{before:60,after:60}
+    });
+    const Bul = txt => new Paragraph({
+      numbering:{reference:'bullets',level:0},
+      children:[new TextRun({text:txt,size:20,color:'333333',font:'Arial'})],
+      spacing:{before:40,after:40}
+    });
+    const Num = (n,txt) => new Paragraph({
+      children:[
+        new TextRun({text:`${n}.  `,bold:true,size:20,color:TEAL,font:'Arial'}),
+        new TextRun({text:txt,size:20,color:'333333',font:'Arial'})
+      ],
+      spacing:{before:60,after:60},
+      indent:{left:360}
+    });
+    const Spacer = pts => new Paragraph({children:[],spacing:{before:0,after:pts||120}});
+    const HR = (color,size) => new Paragraph({children:[],border:{bottom:{style:BorderStyle.SINGLE,size:size||4,color:color||'CCCCCC',space:1}},spacing:{before:0,after:0}});
+
+    const metTbl = items => new Table({
+      width:{size:9360,type:WidthType.DXA},
+      columnWidths:[2340,2340,2340,2340],
+      rows:[new TableRow({children:items.map(m=>new TableCell({
+        borders:noBord,
+        width:{size:2340,type:WidthType.DXA},
+        shading:{fill:TEAL_L,type:ShadingType.CLEAR},
+        margins:{top:160,bottom:160,left:180,right:180},
+        children:[
+          new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:String(m.val),bold:true,size:44,color:NAVY,font:'Arial'})]}),
+          new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:m.lbl,size:16,color:'666666',font:'Arial'})]})
+        ]
+      }))})]
+    });
+
+    const calloutBox = (title, lines) => new Table({
+      width:{size:9360,type:WidthType.DXA},
+      columnWidths:[9360],
+      rows:[new TableRow({children:[new TableCell({
+        borders:{top:b0,bottom:b0,right:b0,left:{style:BorderStyle.SINGLE,size:12,color:TEAL}},
+        width:{size:9360,type:WidthType.DXA},
+        shading:{fill:TEAL_L,type:ShadingType.CLEAR},
+        margins:{top:120,bottom:120,left:200,right:120},
+        children:[
+          new Paragraph({children:[new TextRun({text:title,bold:true,size:18,color:TEAL,font:'Arial'})],spacing:{before:0,after:80}}),
+          ...lines.map(l=>new Paragraph({children:[new TextRun({text:'→  '+l,size:18,color:'333333',font:'Arial'})],spacing:{before:40,after:40}}))
+        ]
+      })]})]
+    });
+
+    const statusColors = {ok:'1D9E75',warn:'BA7517',err:'E24B4A'};
+    const statusLabels = {ok:'Sağlıklı',warn:'Uyarı',err:'Sorunlu'};
+    const appTbl = () => {
+      const cw=[3800,1400,2000,1160];
+      const hBord={style:BorderStyle.SINGLE,size:1,color:'CCCCCC'};
+      const hBords={top:hBord,bottom:hBord,left:b0,right:b0};
+      const cBord={style:BorderStyle.SINGLE,size:1,color:'EEEEEE'};
+      const cBords={top:cBord,bottom:cBord,left:b0,right:b0};
+      const hRow=new TableRow({children:[['Uygulama',cw[0]],['Stream',cw[1]],['Son Yükleme',cw[2]],['Durum',cw[3]]].map(([t,w])=>
+        new TableCell({borders:hBords,width:{size:w,type:WidthType.DXA},shading:{fill:NAVY,type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:120,right:120},
+          children:[new Paragraph({children:[new TextRun({text:t,bold:true,size:18,color:'FFFFFF',font:'Arial'})]})]})
+      )});
+      const dRows=state.apps.map((a,i)=>new TableRow({children:
+        [[a.name,cw[0]],[a.stream,cw[1]],[a.lastReload,cw[2]],[statusLabels[a.status],cw[3]]].map(([t,w],ci)=>
+          new TableCell({borders:cBords,width:{size:w,type:WidthType.DXA},shading:{fill:i%2===0?'FFFFFF':GRAY,type:ShadingType.CLEAR},margins:{top:60,bottom:60,left:120,right:120},
+            children:[new Paragraph({children:[new TextRun({text:t,size:18,color:ci===3?statusColors[a.status]:'333333',font:'Arial',bold:ci===3})]})]}))
+      }));
+      return new Table({width:{size:9360,type:WidthType.DXA},columnWidths:cw,rows:[hRow,...dRows]});
+    };
+
+    const aiLines = state.aiText.split('\n');
+    const aiParagraphs = aiLines.map(line => {
+      if (line.startsWith('##')) return H2(line.replace(/^#+\s*/,''));
+      if (/^\d+\./.test(line)) return P(line);
+      if (line.startsWith('-')) return Bul(line.slice(1).trim());
+      return line.trim() ? P(line) : Spacer(80);
+    });
+
+    const totalQvd = state.qvdLayers.reduce((s,l)=>s+l.tables.length,0);
+    const ok=state.apps.filter(a=>a.status==='ok').length;
+    const err=state.apps.filter(a=>a.status==='err').length;
+    const warn=state.apps.filter(a=>a.status==='warn').length;
+
+    const doc2 = new Document({
+      numbering:{config:[{reference:'bullets',levels:[{level:0,format:LevelFormat.BULLET,text:'–',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:540,hanging:300}}}}]}]},
+      styles:{default:{document:{run:{font:'Arial',size:20,color:'222222'}}}},
+      sections:[{
+        properties:{page:{size:{width:11906,height:16838},margin:{top:1134,right:1134,bottom:1134,left:1134}}},
+        headers:{default:new Header({children:[
+          new Table({width:{size:9638,type:WidthType.DXA},columnWidths:[7000,2638],rows:[new TableRow({children:[
+            new TableCell({borders:{...noBord,bottom:{style:BorderStyle.SINGLE,size:4,color:TEAL}},width:{size:7000,type:WidthType.DXA},margins:{top:0,bottom:60,left:0,right:0},
+              children:[new Paragraph({children:[new TextRun({text:`Proje Durum Analizi — ${state.project}`,size:16,color:'666666',font:'Arial'})]})]}),
+            new TableCell({borders:{...noBord,bottom:{style:BorderStyle.SINGLE,size:4,color:TEAL}},width:{size:2638,type:WidthType.DXA},margins:{top:0,bottom:60,left:0,right:0},
+              children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:'DQ Türkiye',bold:true,size:16,color:NAVY,font:'Arial'})]})]})
+          ]})]})
+        ]})},
+        footers:{default:new Footer({children:[new Paragraph({alignment:AlignmentType.CENTER,children:[
+          new TextRun({text:'DQ Türkiye — Dahili Kullanım     |     Sayfa ',size:16,color:'666666',font:'Arial'}),
+          new TextRun({children:[PageNumber.CURRENT],size:16,color:'666666',font:'Arial'})
+        ],border:{top:{style:BorderStyle.SINGLE,size:2,color:'CCCCCC',space:4}}})]})},
+        children:[
+          // COVER
+          Spacer(1200),
+          new Paragraph({children:[new TextRun({text:'DQ',bold:true,size:96,color:TEAL,font:'Arial'})],spacing:{before:0,after:0}}),
+          new Paragraph({children:[new TextRun({text:'TÜRKİYE',bold:true,size:40,color:NAVY,font:'Arial'})],spacing:{before:0,after:200}}),
+          HR(TEAL,8), Spacer(400),
+          new Paragraph({children:[new TextRun({text:'PROJE DURUM ANALİZİ',bold:true,size:36,color:NAVY,font:'Arial'})],spacing:{before:0,after:120}}),
+          new Paragraph({children:[new TextRun({text:state.project,size:28,color:'666666',font:'Arial'})],spacing:{before:0,after:80}}),
+          new Paragraph({children:[new TextRun({text:`Müşteri: ${state.customer}`,size:22,color:'666666',font:'Arial'})],spacing:{before:0,after:40}}),
+          new Paragraph({children:[new TextRun({text:`Tarih: ${state.date}`,size:22,color:'666666',font:'Arial'})],spacing:{before:0,after:40}}),
+          new Paragraph({children:[new TextRun({text:'Gizlilik: Dahili Kullanım',size:20,color:'666666',font:'Arial',italics:true})]}),
+          new Paragraph({children:[{type:'pageBreak'}]}),
+          // SECTIONS
+          H('1. Yönetici Özeti'), Spacer(80),
+          calloutBox('Proje Snapshot',[
+            `${state.customer} – ${state.project}: ${state.streams.length} stream, ${state.apps.length} uygulama`,
+            `QVD mimarisi ${state.qvdLayers.length} katmanlı yapıda`,
+            `${ok} sağlıklı, ${warn} uyarılı, ${err} sorunlu uygulama`
+          ]),
+          Spacer(160),
+          metTbl([{val:state.streams.length,lbl:'Stream'},{val:state.apps.length,lbl:'Uygulama'},{val:totalQvd,lbl:'QVD'},{val:err+warn,lbl:'Dikkat Gerektiren'}]),
+          Spacer(200),
+          H('2. AI Analizi'), Spacer(80),
+          ...aiParagraphs,
+          Spacer(120),
+          H('3. Uygulama Envanteri'), Spacer(60),
+          appTbl(),
+          Spacer(120),
+          H('4. QVD Mimarisi'), Spacer(60),
+          ...state.qvdLayers.flatMap(layer=>[
+            H2(layer.name),
+            ...(layer.tables.length ? layer.tables.map(t=>Bul(`${t.name}   ${t.size!=='-'?'('+t.size+')':''}`)) : [P('Tablo tespit edilemedi','aaaaaa')]),
+            Spacer(80)
+          ]),
+          Spacer(80), HR(TEAL,8), Spacer(80),
+          new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'Bu rapor DQ Türkiye Qlik Analytics Delivery Framework kapsamında üretilmiştir.',size:17,color:'666666',font:'Arial',italics:true})]}),
+          new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'info@dqturkiye.com',size:17,color:TEAL,font:'Arial'})]})
+        ]
+      }]
+    });
+
+    const buf = await Packer.toBuffer(doc2);
+    download(buf, `DQ_${state.customer}_${state.project}_Durum_Analizi.docx`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    $('export-msg').textContent = '✓ Word raporu indirildi.';
+  } catch(e) {
+    $('export-msg').textContent = 'Hata: '+e.message;
+    console.error(e);
+  }
+  card.classList.remove('loading');
+}
+
+/* ─────────────── EXCEL EXPORT ─────────────── */
+function exportExcel() {
+  if (!state) return;
+  $('export-msg').textContent = 'Excel oluşturuluyor...';
+  try {
+    const wb = XLSX.utils.book_new();
+    const statusLabel = {ok:'Sağlıklı',warn:'Uyarı',err:'Sorunlu'};
+
+    // Sheet 1: Apps
+    const appData = [['Uygulama','Stream','Son Yükleme','Boyut','Durum'],...state.apps.map(a=>[a.name,a.stream,a.lastReload,a.size,statusLabel[a.status]])];
+    const ws1 = XLSX.utils.aoa_to_sheet(appData);
+    ws1['!cols'] = [{wch:40},{wch:14},{wch:14},{wch:10},{wch:12}];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Uygulama Envanteri');
+
+    // Sheet 2: QVD
+    const qvdRows = [['Katman','QVD Tablosu','Boyut','Bağımlı App']];
+    state.qvdLayers.forEach(l=>l.tables.forEach(t=>qvdRows.push([l.name,t.name,t.size,t.apps])));
+    const ws2 = XLSX.utils.aoa_to_sheet(qvdRows);
+    ws2['!cols'] = [{wch:28},{wch:36},{wch:10},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'QVD Mimarisi');
+
+    // Sheet 3: Özet
+    const ok=state.apps.filter(a=>a.status==='ok').length;
+    const warn=state.apps.filter(a=>a.status==='warn').length;
+    const err=state.apps.filter(a=>a.status==='err').length;
+    const sumData=[['Müşteri',state.customer],['Proje',state.project],['Analiz Tarihi',state.date],[''],['Stream Sayısı',state.streams.length],['Uygulama Sayısı',state.apps.length],['QVD Tablosu',state.qvdLayers.reduce((s,l)=>s+l.tables.length,0)],[''],['Sağlıklı App',ok],['Uyarılı App',warn],['Sorunlu App',err]];
+    const ws3 = XLSX.utils.aoa_to_sheet(sumData);
+    ws3['!cols'] = [{wch:22},{wch:30}];
+    XLSX.utils.book_append_sheet(wb, ws3, 'Özet');
+
+    const buf = XLSX.write(wb, {bookType:'xlsx',type:'array'});
+    download(new Uint8Array(buf), `DQ_${state.customer}_Envanter.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    $('export-msg').textContent = '✓ Excel dosyası indirildi.';
+  } catch(e) {
+    $('export-msg').textContent = 'Hata: '+e.message;
+  }
+}
+
+/* ─────────────── BRIEF EXPORT ─────────────── */
+function exportBrief() {
+  if (!state) return;
+  const totalQvd = state.qvdLayers.reduce((s,l)=>s+l.tables.length,0);
+  const errApps = state.apps.filter(a=>a.status==='err').map(a=>a.name);
+  const warnApps = state.apps.filter(a=>a.status==='warn').map(a=>a.name);
+  const brief = `# DQ TÜRKİYE — DANIŞMAN HANDOVER BRIEF
+Müşteri: ${state.customer}
+Proje: ${state.project}
+Sunucu: ${state.host||'Demo'}
+Analiz tarihi: ${state.date}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${state.aiText}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## HIZLI METRİKLER
+Stream: ${state.streams.map(s=>s.name+'('+s.count+')').join(', ')}
+Toplam app: ${state.apps.length}
+QVD tablosu: ${totalQvd}
+Sorunlu app: ${errApps.join(', ')||'yok'}
+Uyarılı app: ${warnApps.join(', ')||'yok'}
+
+## KULLANIM
+Bu brief'i yeni bir Claude konuşmasına yapıştır ve şunu söyle:
+"Yukarıdaki Qlik projesinde çalışacağım, [GÖREV AÇIKLAMASI] konusunda yardım et."
+
+Üretildi: DQ Türkiye Qlik Proje Analizörü`;
+  const blob = new Blob([brief], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=`brief_${state.customer}_${state.project}.txt`.replace(/\s+/g,'_'); a.click();
+  $('export-msg').textContent = '✓ Brief indirildi. Yeni bir Claude konuşmasına yapıştırabilirsiniz.';
+}
+
+/* ─────────────── DOWNLOAD HELPER ─────────────── */
+function download(data, filename, mime) {
+  const blob = new Blob([data], {type:mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+}
+</script>
+</body>
+</html>
