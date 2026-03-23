@@ -186,7 +186,7 @@
     <span class="logo-dq">DQ</span>
     <div>
       <div style="color:white;font-size:14px;font-weight:600;line-height:1">TÜRKİYE</div>
-      <div class="logo-txt">Qlik Proje Analizörü <span style="opacity:.5;font-size:10px">v1.3</span></div>
+      <div class="logo-txt">Qlik Proje Analizörü <span style="opacity:.5;font-size:10px">v1.4</span></div>
     </div>
   </div>
   <a class="gh-badge" href="https://github.com/ikarusas/qlik-analyzer" target="_blank">
@@ -687,24 +687,39 @@ async function fetchCloudData(tenantUrl, token) {
   }
 
   const mappedApps = apps.map(a => {
-    // Try all known field name variants
-    const name = a.name || a.title || a.resourceAttributes?.name || a.resourceName || 'İsimsiz';
-    const spaceId = a.spaceId || a.resourceAttributes?.spaceId || null;
-    const lastReload = a.lastReloadTime || a.updatedAt || a.lastUpdatedAt || null;
+    const name = a.name || a.title || 'İsimsiz';
+    const spaceId = a.spaceId || null;
+    const lastReload = a.lastReloadTime || null;
+    const lastModified = a.modifiedDate || a.updatedAt || null;
     const reloadDate = lastReload ? new Date(lastReload) : null;
+    const modDate = lastModified ? new Date(lastModified) : null;
     const daysAgo = reloadDate ? Math.floor((Date.now()-reloadDate)/86400000) : 999;
-    const status = daysAgo > 30 ? 'err' : daysAgo > 7 ? 'warn' : 'ok';
     const spaceName = spaceMap[spaceId] || (spaceId ? spaceId : 'Personal Space');
-    const fileSize = a.usage?.appFile || a.fileSize || null;
+    // Determine status and reason
+    let status = 'ok';
+    let statusReason = '';
+    if (!reloadDate) {
+      status = 'err';
+      statusReason = 'Hiç yüklenmemiş';
+    } else if (daysAgo > 30) {
+      status = 'err';
+      statusReason = `${daysAgo} gün önce yüklendi`;
+    } else if (daysAgo > 7) {
+      status = 'warn';
+      statusReason = `${daysAgo} gün önce yüklendi`;
+    }
+    // Owner: extract name from owner object or use ownerId
+    const ownerName = a.owner?.name || a.owner?.email || a.ownerId || '-';
     return {
       name,
       stream: spaceName,
       lastReload: reloadDate ? reloadDate.toLocaleDateString('tr-TR') : '-',
-      size: fileSize ? sizeStr(fileSize) : '-',
+      size: ownerName, // repurpose size field for owner display
       status,
+      statusReason,
       publishedDate: lastReload,
       isCloud: true,
-      owner: a.ownerId || '-'
+      owner: ownerName
     };
   });
 
@@ -725,7 +740,8 @@ async function fetchCloudData(tenantUrl, token) {
     }
     // Qlik Cloud data-connections: name, datasourceID, space, type fields
     const getName = c => c.name || c.datasourceID || c.id || 'Bilinmiyor';
-    const getType = c => c.datasourceID || c.type || c.provider || '';
+    const getType = c => c.datasourceID || c.qArchitecture || c.type || '';
+    const getConn = c => c.qConnectStatement ? c.qConnectStatement.slice(0,60) : '';
     const qvdConns = conns.filter(c =>
       getType(c).toLowerCase().includes('qvd') ||
       getType(c).toLowerCase().includes('folder') ||
@@ -1001,13 +1017,20 @@ function filterApps() {
   );
   const badges = {ok:'badge-ok',warn:'badge-warn',err:'badge-err'};
   const labels = {ok:'Sağlıklı',warn:'Uyarı',err:'Sorunlu'};
+  const isCloud = state && state.isCloud;
+  // Update table header
+  const sizeHeader = document.querySelector('.data-table th:nth-child(4)');
+  if (sizeHeader) sizeHeader.textContent = isCloud ? 'Sahip' : 'Boyut';
   $('app-tbody').innerHTML = filtered.map(a=>`
     <tr>
       <td class="app-name">${escHtml(a.name)}</td>
       <td style="color:var(--gray-text)">${escHtml(a.stream)}</td>
       <td style="color:var(--gray-text)">${escHtml(a.lastReload)}</td>
-      <td style="color:var(--gray-text)">${escHtml(a.size)}</td>
-      <td><span class="badge ${badges[a.status]}">${labels[a.status]}</span></td>
+      <td style="color:var(--gray-text);font-size:12px">${escHtml(isCloud ? (a.owner||'-') : a.size)}</td>
+      <td>
+        <span class="badge ${badges[a.status]}">${labels[a.status]}</span>
+        ${a.statusReason ? `<div style="font-size:10px;color:var(--gray-text);margin-top:2px">${escHtml(a.statusReason)}</div>` : ''}
+      </td>
     </tr>
   `).join('');
 }
