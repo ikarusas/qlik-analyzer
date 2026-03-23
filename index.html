@@ -257,8 +257,8 @@
       </div>
       <div class="field">
         <label>API Token</label>
-        <input id="cloud-token" type="password" placeholder="eyJhbGc...">
-        <div class="hint">Profil → API Keys → Token oluştur</div>
+        <textarea id="cloud-token" placeholder="eyJhbGc..." style="min-height:64px;font-size:11px;font-family:'Courier New',monospace;word-break:break-all;" oninput="updateTokenInfo()"></textarea>
+        <div class="hint" id="token-info">Profil → API Keys → Token oluştur</div>
       </div>
     </div>
 
@@ -406,6 +406,19 @@ let connType = 'onprem'; // 'onprem' | 'cloud'
 /* ─────────────── UTILS ─────────────── */
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function updateTokenInfo() {
+  const raw = $('cloud-token').value || '';
+  const clean = raw.trim().replace(/[\r\n\s]+/g,'');
+  const el = $('token-info');
+  if (clean.length > 0) {
+    el.textContent = `✓ ${clean.length} karakter token algılandı`;
+    el.style.color = clean.length > 50 ? 'var(--green)' : 'var(--amber)';
+  } else {
+    el.textContent = 'Profil → API Keys → Token oluştur';
+    el.style.color = '';
+  }
+}
 
 function setConnType(type) {
   connType = type;
@@ -629,6 +642,7 @@ async function fetchCloudPaged(tenantUrl, token, path) {
 
 async function fetchCloudData(tenantUrl, token) {
   log(`Qlik Cloud bağlanıyor: ${tenantUrl}`, 'info');
+  log(`Token uzunluğu: ${token.length} karakter`, 'info');
 
   // Spaces (stream karşılığı)
   log('Space listesi çekiliyor...', 'info');
@@ -854,8 +868,8 @@ async function startAnalysis(demo=false) {
       }
       data = makeDemoData(isCloud);
     } else if (isCloud) {
-      const tenant = ($('cloud-tenant').value||'').replace(/\/+$/,'');
-      const token = $('cloud-token').value.trim();
+      const tenant = ($('cloud-tenant').value||'').trim().replace(/\/+$/,'');
+      const token = ($('cloud-token').value||'').trim().replace(/[\r\n\s]+/g,'');
       if (!tenant) throw new Error('Tenant URL gerekli');
       if (!token) throw new Error('API Token gerekli');
       data = await fetchCloudData(tenant, token);
