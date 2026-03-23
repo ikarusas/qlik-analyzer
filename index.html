@@ -610,13 +610,24 @@ async function fetchRealData(host, port, rawUser) {
 /* ─────────────── QLIK CLOUD API ─────────────── */
 async function fetchCloud(tenantUrl, token, path, params='') {
   const url = `${tenantUrl.replace(/\/+$/,'')}/api/v1${path}${params ? '?'+params : ''}`;
-  const resp = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'qlik-web-integration-id': ''
-    }
-  });
+  let resp;
+  try {
+    resp = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+  } catch(e) {
+    throw new Error('CORS/Ag hatasi: Qlik Cloud Management Console > Web bolumune bu uygulamanin adresini ekleyin. (' + e.message + ')');
+  }
+  if (resp.status === 401) {
+    throw new Error('401 Yetkisiz: Token gecersiz veya suresi dolmus. Yeni token olusturup tekrar deneyin.');
+  }
+  if (resp.status === 403) {
+    throw new Error('403 Erisim Reddedildi: Kullanicinin bu kaynaga erisim yetkisi yok.');
+  }
   if (!resp.ok) {
     const errText = await resp.text().catch(()=>'');
     throw new Error(`Cloud API ${resp.status}: ${resp.statusText}${errText ? ' — '+errText.slice(0,120) : ''}`);
