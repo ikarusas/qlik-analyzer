@@ -63,6 +63,16 @@
   .key-warning { background: var(--amber-bg); border: 1px solid #ffb74d; border-radius: 6px; padding: 10px 12px; font-size: 12px; color: var(--amber); margin-bottom: 12px; display: none; }
   .key-warning.visible { display: block; }
 
+  /* CONNECTION TYPE TOGGLE */
+  .conn-toggle { display: flex; gap: 0; border: 1px solid var(--gray-border); border-radius: 8px; overflow: hidden; margin-bottom: 14px; }
+  .conn-toggle-btn { flex: 1; padding: 8px 6px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; background: var(--white); color: var(--gray-text); transition: all .15s; text-align: center; }
+  .conn-toggle-btn.active { background: var(--navy); color: white; }
+  .conn-toggle-btn:first-child { border-radius: 7px 0 0 7px; }
+  .conn-toggle-btn:last-child { border-radius: 0 7px 7px 0; }
+
+  /* CLOUD BADGE */
+  .cloud-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; background: linear-gradient(135deg, #007A87, #0A2240); color: white; padding: 2px 8px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
+
   /* STEP BAR */
   .step-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 1.5rem; }
   .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; border: 2px solid var(--gray-border); background: var(--white); color: var(--gray-text); flex-shrink: 0; transition: all .3s; }
@@ -109,6 +119,7 @@
   .badge-ok { background: var(--green-bg); color: var(--green); }
   .badge-warn { background: var(--amber-bg); color: var(--amber); }
   .badge-err { background: var(--red-bg); color: var(--red); }
+  .badge-cloud { background: #E3F2FD; color: #1565C0; }
 
   /* QVD LAYERS */
   .qvd-layer { margin-bottom: 1.25rem; }
@@ -138,6 +149,10 @@
   /* CALLOUT */
   .callout { background: var(--teal-light); border-left: 3px solid var(--teal); border-radius: 0 8px 8px 0; padding: 12px 14px; margin-bottom: 12px; font-size: 13px; line-height: 1.7; }
   .callout strong { color: var(--navy); display: block; margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+
+  /* INFO BOX */
+  .info-box { background: #E3F2FD; border-left: 3px solid #1976D2; border-radius: 0 8px 8px 0; padding: 10px 14px; margin-bottom: 12px; font-size: 12px; line-height: 1.6; color: #0D47A1; }
+  .info-box strong { display: block; margin-bottom: 3px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
 
   /* STATUS */
   .status-bar { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--gray-text); margin-top: 10px; min-height: 20px; }
@@ -174,9 +189,9 @@
       <div class="logo-txt">Qlik Proje Analizörü</div>
     </div>
   </div>
-  <a class="gh-badge" href="https://github.com" target="_blank">
+  <a class="gh-badge" href="https://github.com/ikarusas/qlik-analyzer" target="_blank">
     <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-    GitHub Pages
+    GitHub
   </a>
 </div>
 
@@ -200,20 +215,51 @@
     </div>
 
     <hr class="divider">
-    <div class="sidebar-title">QRS API Bağlantısı</div>
+    <div class="sidebar-title">Bağlantı Türü</div>
 
-    <div class="field">
-      <label>Sunucu adresi</label>
-      <input id="host" type="text" placeholder="https://qlik.sirket.com">
-      <div class="hint">QRS CORS açık olmalı (port 4242)</div>
+    <!-- CONNECTION TYPE TOGGLE -->
+    <div class="conn-toggle">
+      <button class="conn-toggle-btn active" id="btn-onprem" onclick="setConnType('onprem')">
+        🖥 On-Premises
+      </button>
+      <button class="conn-toggle-btn" id="btn-cloud" onclick="setConnType('cloud')">
+        ☁️ Qlik Cloud <span class="cloud-badge">NEW</span>
+      </button>
     </div>
-    <div class="field">
-      <label>Port</label>
-      <input id="port" type="text" value="4242">
+
+    <!-- ON-PREM FIELDS -->
+    <div id="section-onprem">
+      <div class="field">
+        <label>Sunucu adresi</label>
+        <input id="host" type="text" placeholder="https://qlik.sirket.com">
+        <div class="hint">QRS CORS açık olmalı (port 4242)</div>
+      </div>
+      <div class="field">
+        <label>Port</label>
+        <input id="port" type="text" value="4242">
+      </div>
+      <div class="field">
+        <label>Kullanıcı (Directory\Username)</label>
+        <input id="quser" type="text" placeholder="DOMAIN\qlik_service">
+      </div>
     </div>
-    <div class="field">
-      <label>Kullanıcı (Directory\Username)</label>
-      <input id="quser" type="text" placeholder="DOMAIN\qlik_service">
+
+    <!-- CLOUD FIELDS -->
+    <div id="section-cloud" style="display:none">
+      <div class="info-box">
+        <strong>Qlik Cloud Bağlantısı</strong>
+        Tenant URL ve API token ile bağlanır. Token, Qlik Cloud portalındaki profil ayarlarından oluşturulabilir.
+      </div>
+      <div class="field">
+        <label>Tenant URL</label>
+        <input id="cloud-tenant" type="text" placeholder="https://sirket.eu.qlikcloud.com">
+        <div class="hint">Bölge dahil tam URL (eu / us / ap)</div>
+      </div>
+      <div class="field">
+        <label>API Token</label>
+        <input id="cloud-token" type="password" placeholder="eyJhbGc...">
+        <div class="hint">Profil → API Keys → Token oluştur</div>
+      </div>
     </div>
 
     <hr class="divider">
@@ -277,7 +323,7 @@
       <div class="tab-bar">
         <button class="tab active" onclick="showTab('summary',this)">Özet</button>
         <button class="tab" onclick="showTab('apps',this)">Uygulamalar</button>
-        <button class="tab" onclick="showTab('qvd',this)">QVD Mimarisi</button>
+        <button class="tab" onclick="showTab('qvd',this)" id="tab-qvd">QVD Mimarisi</button>
         <button class="tab" onclick="showTab('ai',this)">AI Analizi</button>
         <button class="tab" onclick="showTab('export',this)">Çıktılar</button>
       </div>
@@ -293,7 +339,7 @@
         <div class="filter-row">
           <input type="text" id="app-search" placeholder="Uygulama ara..." oninput="filterApps()">
           <select id="stream-filter" onchange="filterApps()">
-            <option value="">Tüm stream'ler</option>
+            <option value="">Tüm koleksiyonlar</option>
           </select>
           <select id="status-filter" onchange="filterApps()">
             <option value="">Tüm durumlar</option>
@@ -304,7 +350,7 @@
         </div>
         <div class="card" style="padding:0;overflow:hidden">
           <table class="data-table">
-            <thead><tr><th>Uygulama</th><th>Stream</th><th>Son Yükleme</th><th>Boyut</th><th>Durum</th></tr></thead>
+            <thead><tr><th>Uygulama</th><th id="th-collection">Stream / Space</th><th>Son Yükleme</th><th>Boyut</th><th>Durum</th></tr></thead>
             <tbody id="app-tbody"></tbody>
           </table>
         </div>
@@ -355,13 +401,24 @@
 <script>
 /* ─────────────── STATE ─────────────── */
 let state = null;
+let connType = 'onprem'; // 'onprem' | 'cloud'
 
 /* ─────────────── UTILS ─────────────── */
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+function setConnType(type) {
+  connType = type;
+  $('btn-onprem').className = 'conn-toggle-btn' + (type==='onprem'?' active':'');
+  $('btn-cloud').className = 'conn-toggle-btn' + (type==='cloud'?' active':'');
+  $('section-onprem').style.display = type==='onprem' ? 'block' : 'none';
+  $('section-cloud').style.display = type==='cloud' ? 'block' : 'none';
+  $('th-collection').textContent = type==='cloud' ? 'Space' : 'Stream';
+  $('stream-filter').options[0].text = type==='cloud' ? 'Tüm space\'ler' : 'Tüm stream\'ler';
+}
+
 function setStep(n) {
-  const labels = ['Bağlantı bilgilerini girin','QRS API bağlanıyor...','AI analizi yapılıyor...','Tamamlandı'];
+  const labels = ['Bağlantı bilgilerini girin','API bağlanıyor...','AI analizi yapılıyor...','Tamamlandı'];
   for (let i = 1; i <= 4; i++) {
     const el = $('s'+i);
     if (i < n) { el.className='step-dot done'; el.textContent='✓'; }
@@ -396,23 +453,24 @@ function showTab(name, btn) {
 function loadDemo() {
   $('customer').value = 'ABC Holding';
   $('project').value = 'Yönetim Raporlaması';
-  $('host').value = 'https://qlik-prod.abcholding.com';
-  $('quser').value = 'DOMAIN\\qlik_service';
+  if (connType === 'cloud') {
+    $('cloud-tenant').value = 'https://abcholding.eu.qlikcloud.com';
+    $('cloud-token').value = 'demo-token';
+  } else {
+    $('host').value = 'https://qlik-prod.abcholding.com';
+    $('quser').value = 'DOMAIN\\qlik_service';
+  }
   $('notes').value = 'Proje 2022\'de başladı. QVD katmanları mevcut ama dokümante değil. Section Access bazı app\'lerde eksik. NPrinting entegrasyonu var.';
   startAnalysis(true);
 }
 
-function makeDemoData() {
-  const streamDefs = [
-    {name:'Finans', count:4},
-    {name:'Satış', count:6},
-    {name:'Üretim', count:3},
-    {name:'İK', count:2},
-    {name:'Operasyon', count:3}
-  ];
+function makeDemoData(isCloud) {
+  const groupDefs = isCloud
+    ? [{name:'Finans',count:4},{name:'Satış',count:6},{name:'Üretim',count:3},{name:'İK',count:2},{name:'Operasyon',count:3}]
+    : [{name:'Finans',count:4},{name:'Satış',count:6},{name:'Üretim',count:3},{name:'İK',count:2},{name:'Operasyon',count:3}];
   const statusPool = ['ok','ok','ok','ok','warn','warn','err'];
   const apps = [];
-  streamDefs.forEach(s => {
+  groupDefs.forEach(s => {
     const suffixes = ['KPI Dashboard','Detay Analiz','Özet Rapor','Veri Kalite','Trend Analiz','Aylık Rapor'];
     for (let i = 0; i < s.count; i++) {
       const status = statusPool[Math.floor(Math.random()*statusPool.length)];
@@ -424,12 +482,23 @@ function makeDemoData() {
         lastReload: d.toLocaleDateString('tr-TR'),
         size: (Math.floor(Math.random()*700+80))+'MB',
         status,
-        publishedDate: d.toISOString()
+        publishedDate: d.toISOString(),
+        isCloud
       });
     }
   });
-  const streams = streamDefs.map(s=>({...s, id:'stream-'+s.name}));
-  const qvdLayers = [
+  const streams = groupDefs.map(s=>({...s, id:'stream-'+s.name}));
+  const qvdLayers = isCloud ? [
+    { name:'Data Files (QVD)', key:'files', tables:[
+      {name:'GL_Muhasebe.qvd', size:'340MB', apps:'4'},
+      {name:'SD_Siparis.qvd', size:'820MB', apps:'5'},
+      {name:'HR_Personel.qvd', size:'45MB', apps:'2'}
+    ]},
+    { name:'Shared Spaces', key:'shared', tables:[
+      {name:'Finans Data Space', size:'-', apps:'4'},
+      {name:'Satış Analitik Space', size:'-', apps:'6'}
+    ]}
+  ] : [
     { name:'Katman 1 — Ham Veri', key:'raw', tables:[
       {name:'GL_Muhasebe.qvd', size:'340MB', apps:'4'},{name:'SD_Siparis.qvd', size:'820MB', apps:'5'},
       {name:'HR_Personel.qvd', size:'45MB', apps:'2'},{name:'PP_Uretim.qvd', size:'210MB', apps:'3'}
@@ -443,10 +512,10 @@ function makeDemoData() {
       {name:'M_Uretim_OEE.qvd', size:'62MB', apps:'2'}
     ]}
   ];
-  return { streams, apps, qvdLayers };
+  return { streams, apps, qvdLayers, isCloud };
 }
 
-/* ─────────────── QRS API ─────────────── */
+/* ─────────────── QRS API (On-Prem) ─────────────── */
 async function fetchQRS(host, port, userDir, userId, path) {
   const url = `${host}:${port}/qrs${path}?xrfkey=abcdefghijklmnop`;
   const headers = {
@@ -496,7 +565,8 @@ async function fetchRealData(host, port, rawUser) {
       lastReload: lastReload ? lastReload.toLocaleDateString('tr-TR') : '-',
       size: sizeStr(a.fileSize),
       status,
-      publishedDate: a.lastReloadTime
+      publishedDate: a.lastReloadTime,
+      isCloud: false
     };
   });
 
@@ -505,7 +575,6 @@ async function fetchRealData(host, port, rawUser) {
   if(errCount) log(`⚠ ${errCount} app 30+ gün yüklenmemiş`, 'err');
   if(warnCount) log(`⚠ ${warnCount} app 7+ gün yüklenmemiş`, 'warn');
 
-  // QVD: QRS'den data connection üzerinden tespit
   log('Veri bağlantıları ve QVD yapısı inceleniyor...', 'info');
   let qvdLayers = [];
   try {
@@ -522,7 +591,145 @@ async function fetchRealData(host, port, rawUser) {
   }
 
   const mappedStreams = streams.map(s => ({name:s.name, count: mappedApps.filter(a=>a.stream===s.name).length}));
-  return { streams: mappedStreams, apps: mappedApps, qvdLayers };
+  return { streams: mappedStreams, apps: mappedApps, qvdLayers, isCloud: false };
+}
+
+/* ─────────────── QLIK CLOUD API ─────────────── */
+async function fetchCloud(tenantUrl, token, path, params='') {
+  const url = `${tenantUrl.replace(/\/+$/,'')}/api/v1${path}${params ? '?'+params : ''}`;
+  const resp = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'qlik-web-integration-id': ''
+    }
+  });
+  if (!resp.ok) {
+    const errText = await resp.text().catch(()=>'');
+    throw new Error(`Cloud API ${resp.status}: ${resp.statusText}${errText ? ' — '+errText.slice(0,120) : ''}`);
+  }
+  return resp.json();
+}
+
+async function fetchCloudPaged(tenantUrl, token, path) {
+  let results = [];
+  let nextCursor = null;
+  let page = 0;
+  do {
+    const params = nextCursor ? `limit=100&next=${nextCursor}` : 'limit=100';
+    const data = await fetchCloud(tenantUrl, token, path, params);
+    const items = data.data || data.items || [];
+    results = results.concat(items);
+    nextCursor = data.links?.next?.href ? new URL(data.links.next.href).searchParams.get('next') : null;
+    page++;
+    if (page > 20) break; // güvenlik limiti
+  } while (nextCursor);
+  return results;
+}
+
+async function fetchCloudData(tenantUrl, token) {
+  log(`Qlik Cloud bağlanıyor: ${tenantUrl}`, 'info');
+
+  // Spaces (stream karşılığı)
+  log('Space listesi çekiliyor...', 'info');
+  let spaces = [];
+  try {
+    spaces = await fetchCloudPaged(tenantUrl, token, '/spaces');
+    log(`✓ ${spaces.length} space bulundu`, 'ok');
+  } catch(e) {
+    log(`Space listesi alınamadı: ${e.message}`, 'warn');
+  }
+  await sleep(150);
+
+  // Apps
+  log('Uygulama listesi çekiliyor...', 'info');
+  const apps = await fetchCloudPaged(tenantUrl, token, '/apps');
+  log(`✓ ${apps.length} uygulama bulundu`, 'ok');
+  await sleep(150);
+
+  // Space map
+  const spaceMap = {};
+  spaces.forEach(s => { spaceMap[s.id] = s.name; });
+
+  // Map apps
+  const mappedApps = apps.map(a => {
+    const lastReload = a.lastReloadTime || a.updatedAt || null;
+    const reloadDate = lastReload ? new Date(lastReload) : null;
+    const daysAgo = reloadDate ? Math.floor((Date.now()-reloadDate)/86400000) : 999;
+    const status = daysAgo > 30 ? 'err' : daysAgo > 7 ? 'warn' : 'ok';
+    const spaceName = spaceMap[a.spaceId] || (a.spaceId ? a.spaceId : 'Personal Space');
+    return {
+      name: a.name,
+      stream: spaceName,
+      lastReload: reloadDate ? reloadDate.toLocaleDateString('tr-TR') : '-',
+      size: a.usage?.appFile ? sizeStr(a.usage.appFile) : '-',
+      status,
+      publishedDate: lastReload,
+      isCloud: true,
+      owner: a.ownerId || '-'
+    };
+  });
+
+  const errCount = mappedApps.filter(a=>a.status==='err').length;
+  const warnCount = mappedApps.filter(a=>a.status==='warn').length;
+  if(errCount) log(`⚠ ${errCount} app 30+ gün güncellenmemiş`, 'err');
+  if(warnCount) log(`⚠ ${warnCount} app 7+ gün güncellenmemiş`, 'warn');
+
+  // Data connections (QVD / veri kaynakları)
+  log('Veri bağlantıları inceleniyor...', 'info');
+  let qvdLayers = [];
+  try {
+    const conns = await fetchCloudPaged(tenantUrl, token, '/data-connections');
+    log(`✓ ${conns.length} veri bağlantısı tespit edildi`, 'ok');
+    const qvdConns = conns.filter(c =>
+      (c.datasourceID||'').toLowerCase().includes('qvd') ||
+      (c.datasourceID||'').toLowerCase().includes('folder') ||
+      (c.qri||'').toLowerCase().includes('qvd')
+    );
+    const otherConns = conns.filter(c => !qvdConns.includes(c));
+    qvdLayers = [];
+    if (qvdConns.length) {
+      qvdLayers.push({name:'QVD / Dosya Bağlantıları', key:'qvd', tables: qvdConns.slice(0,12).map(c=>({
+        name: c.name || c.datasourceID || 'Bilinmiyor',
+        size: '-', apps: '-'
+      }))});
+    }
+    if (otherConns.length) {
+      qvdLayers.push({name:'Diğer Veri Kaynakları', key:'other', tables: otherConns.slice(0,12).map(c=>({
+        name: `${c.name || 'Bilinmiyor'} (${c.datasourceID || '-'})`,
+        size: '-', apps: '-'
+      }))});
+    }
+    if (!qvdLayers.length) {
+      qvdLayers = [{name:'Veri Bağlantıları', key:'all', tables: conns.slice(0,12).map(c=>({
+        name: c.name || c.datasourceID || 'Bilinmiyor', size:'-', apps:'-'
+      }))}];
+    }
+  } catch(e) {
+    log(`Veri bağlantıları alınamadı: ${e.message}`, 'warn');
+    qvdLayers = [{name:'Veri Bağlantıları', key:'unknown', tables:[]}];
+  }
+
+  // Reload tasks
+  log('Reload task\'ları inceleniyor...', 'info');
+  try {
+    const tasks = await fetchCloudPaged(tenantUrl, token, '/reload-tasks');
+    const failedTasks = tasks.filter(t => t.state === 'Failed' || t.state === 'Aborted');
+    if (failedTasks.length) log(`⚠ ${failedTasks.length} başarısız/iptal reload task`, 'warn');
+    else log(`✓ ${tasks.length} reload task incelendi`, 'ok');
+  } catch(e) {
+    log('Reload task listesi alınamadı (izin gerekebilir)', 'warn');
+  }
+
+  const spaceGroups = spaces.map(s => ({
+    name: s.name,
+    count: mappedApps.filter(a => a.stream === s.name).length
+  })).filter(s => s.count > 0);
+
+  const personalCount = mappedApps.filter(a => a.stream === 'Personal Space').length;
+  if (personalCount) spaceGroups.unshift({name:'Personal Space', count: personalCount});
+
+  return { streams: spaceGroups, apps: mappedApps, qvdLayers, isCloud: true };
 }
 
 /* ─────────────── CLAUDE AI ─────────────── */
@@ -531,22 +738,24 @@ async function runAI(data) {
   const customer = $('customer').value || 'Müşteri';
   const project = $('project').value || 'Proje';
   const notes = $('notes').value || '';
+  const platform = data.isCloud ? 'Qlik Sense Cloud' : 'Qlik Sense On-Premises';
 
   const errApps = data.apps.filter(a=>a.status==='err').map(a=>a.name);
   const warnApps = data.apps.filter(a=>a.status==='warn').map(a=>a.name);
-  const prompt = `Qlik Sense on-prem projesi için durum analizi yap ve danışman handover brief'i oluştur.
+  const groupLabel = data.isCloud ? 'Space' : 'Stream';
+  const prompt = `${platform} projesi için durum analizi yap ve danışman handover brief'i oluştur.
 
 MÜŞTERİ: ${customer}
 PROJE: ${project}
+PLATFORM: ${platform}
 EK NOTLAR: ${notes||'Yok'}
 
 MEVCUT DURUM:
-- Stream sayısı: ${data.streams.length} (${data.streams.map(s=>s.name+'('+s.count+')').join(', ')})
+- ${groupLabel} sayısı: ${data.streams.length} (${data.streams.map(s=>s.name+'('+s.count+')').join(', ')})
 - Toplam uygulama: ${data.apps.length}
 - Sorunlu app (30+ gün): ${errApps.length} — ${errApps.join(', ')||'yok'}
 - Uyarılı app (7-30 gün): ${warnApps.length} — ${warnApps.join(', ')||'yok'}
-- QVD katmanları: ${data.qvdLayers.map(l=>l.name).join(' → ')}
-- Toplam QVD tablosu: ${data.qvdLayers.reduce((s,l)=>s+l.tables.length,0)}
+- Veri katmanları: ${data.qvdLayers.map(l=>l.name).join(' → ')}
 
 Aşağıdaki başlıklarla Türkçe, profesyonel, aksiyon odaklı handover brief yaz (max 500 kelime):
 
@@ -582,28 +791,31 @@ Aşağıdaki başlıklarla Türkçe, profesyonel, aksiyon odaklı handover brief
 function fallbackAnalysis(customer, project, data) {
   const errApps = data.apps.filter(a=>a.status==='err');
   const warnApps = data.apps.filter(a=>a.status==='warn');
+  const platform = data.isCloud ? 'Qlik Sense Cloud' : 'Qlik Sense On-Premises';
+  const groupLabel = data.isCloud ? 'space' : 'stream';
   return `## PROJE ÖZETİ
-${customer} – ${project} projesi ${data.streams.length} stream ve ${data.apps.length} uygulama içermektedir. QVD mimarisi ${data.qvdLayers.length} katmanlı yapıdadır.
+${customer} – ${project} projesi ${platform} üzerinde ${data.streams.length} ${groupLabel} ve ${data.apps.length} uygulama içermektedir.
 
 ## MEVCUT DURUM DEĞERLENDİRMESİ
-Güçlü yönler: Stream yapısı iş birimleri bazında organize edilmiş, katmanlı QVD mimarisi mevcut.
+Güçlü yönler: ${data.isCloud ? 'Cloud yapısı merkezi yönetim avantajı sağlıyor.' : 'Stream yapısı iş birimleri bazında organize edilmiş, katmanlı QVD mimarisi mevcut.'}
 Riskler: ${errApps.length} uygulamada reload 30+ gün gerçekleşmemiş${errApps.length ? ` (${errApps.map(a=>a.name).join(', ')})` : ''}. ${warnApps.length} uygulamada uyarı durumu mevcut.
 
 ## ACİL AKSİYONLAR
 1. Sorunlu uygulamaların reload logları incelenmeli ve kök neden analizi yapılmalı
-2. QVD bağımlılık haritası dokümante edilmeli
-3. Section Access konfigürasyonu tüm uygulamalarda doğrulanmalı
-4. Reload scheduler tutarlılığı QMC üzerinden gözden geçirilmeli
-5. Kullanılmayan app ve QVD dosyaları temizlenmeli
+2. ${data.isCloud ? 'Space izinleri ve erişim kontrolü gözden geçirilmeli' : 'QVD bağımlılık haritası dokümante edilmeli'}
+3. ${data.isCloud ? 'Tenant yönetim konsolundan kullanıcı lisansları kontrol edilmeli' : 'Section Access konfigürasyonu tüm uygulamalarda doğrulanmalı'}
+4. Reload scheduler tutarlılığı gözden geçirilmeli
+5. Kullanılmayan app ve kaynaklar temizlenmeli
 
 ## GELİŞTİRME ÖNERİLERİ
-- QVD naming convention standardize edilmeli
-- Operations Monitor uygulaması kurularak merkezi izleme sağlanmalı
-- Reload hata bildirimi (e-posta/Teams) kurulmalı
-- Script versiyonlama için Git entegrasyonu değerlendirilmeli
+${data.isCloud
+  ? '- Automation ile reload hata bildirimi (e-posta/Teams) kurulmalı\n- Spaces yapısı iş birimleriyle uyumlu hale getirilmeli\n- Data gateway bağlantıları dokümante edilmeli\n- Tenant kullanım metrikleri düzenli izlenmeli'
+  : '- QVD naming convention standardize edilmeli\n- Operations Monitor uygulaması kurularak merkezi izleme sağlanmalı\n- Reload hata bildirimi (e-posta/Teams) kurulmalı\n- Script versiyonlama için Git entegrasyonu değerlendirilmeli'}
 
 ## YENİ DANIŞMANA NOTLAR
-QMC'ye giriş yaparak reload task listesini ve hata loglarını inceleyin. QVD klasör yapısını fiziksel olarak gözden geçirin. Müşteri IT ekibi ile sertifika ve erişim takvimini netleştirin. Section Access kullanıcı/rol matrisini temin edin.`;
+${data.isCloud
+  ? 'Tenant yönetim konsoluna giriş yaparak reload task listesini ve hata loglarını inceleyin. Space yapısını ve kullanıcı/grup izinlerini gözden geçirin. Varsa Data Gateway bağlantılarını doğrulayın.'
+  : 'QMC\'ye giriş yaparak reload task listesini ve hata loglarını inceleyin. QVD klasör yapısını fiziksel olarak gözden geçirin. Müşteri IT ekibi ile sertifika ve erişim takvimini netleştirin. Section Access kullanıcı/rol matrisini temin edin.'}`;
 }
 
 /* ─────────────── MAIN FLOW ─────────────── */
@@ -620,25 +832,38 @@ async function startAnalysis(demo=false) {
   $('log').innerHTML = '';
   setStep(2);
 
+  const isCloud = connType === 'cloud';
+
   try {
     let data;
     if (demo) {
-      log('Demo modu — simüle veri yükleniyor', 'info');
+      log(`Demo modu (${isCloud ? 'Qlik Cloud' : 'On-Premises'}) — simüle veri yükleniyor`, 'info');
       await sleep(300);
-      log('✓ 5 stream bulundu', 'ok');
+      log(`✓ ${isCloud ? '5 space' : '5 stream'} bulundu`, 'ok');
       await sleep(200);
       log('✓ 18 uygulama bulundu', 'ok');
       await sleep(200);
       log('⚠ 2 app 30+ gün yüklenmemiş', 'err');
       log('⚠ 3 app 7+ gün yüklenmemiş', 'warn');
       await sleep(200);
-      log('✓ QVD mimarisi tespit edildi (3 katman, 10 tablo)', 'ok');
-      data = makeDemoData();
+      if (isCloud) {
+        log('✓ Veri bağlantıları tespit edildi', 'ok');
+        log('✓ Reload task\'lar incelendi', 'ok');
+      } else {
+        log('✓ QVD mimarisi tespit edildi (3 katman, 10 tablo)', 'ok');
+      }
+      data = makeDemoData(isCloud);
+    } else if (isCloud) {
+      const tenant = ($('cloud-tenant').value||'').replace(/\/+$/,'');
+      const token = $('cloud-token').value.trim();
+      if (!tenant) throw new Error('Tenant URL gerekli');
+      if (!token) throw new Error('API Token gerekli');
+      data = await fetchCloudData(tenant, token);
     } else {
       const host = ($('host').value||'').replace(/\/+$/,'');
       const port = $('port').value || '4242';
       const rawUser = $('quser').value;
-      if (!host) { throw new Error('Sunucu adresi gerekli'); }
+      if (!host) throw new Error('Sunucu adresi gerekli');
       data = await fetchRealData(host, port, rawUser);
     }
 
@@ -652,7 +877,8 @@ async function startAnalysis(demo=false) {
       customer: $('customer').value || 'Müşteri',
       project: $('project').value || 'Proje',
       notes: $('notes').value,
-      host: $('host').value,
+      host: isCloud ? $('cloud-tenant').value : $('host').value,
+      isCloud,
       ...data,
       aiText,
       date: new Date().toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'})
@@ -673,39 +899,44 @@ async function startAnalysis(demo=false) {
 
 /* ─────────────── RENDER ─────────────── */
 function renderResults() {
-  const {streams, apps, qvdLayers, aiText, customer, project} = state;
+  const {streams, apps, qvdLayers, aiText, customer, project, isCloud} = state;
   const ok = apps.filter(a=>a.status==='ok').length;
   const warn = apps.filter(a=>a.status==='warn').length;
   const err = apps.filter(a=>a.status==='err').length;
   const totalQvd = qvdLayers.reduce((s,l)=>s+l.tables.length,0);
 
+  // Update tab label
+  $('tab-qvd').textContent = isCloud ? 'Veri Kaynakları' : 'QVD Mimarisi';
+  $('th-collection').textContent = isCloud ? 'Space' : 'Stream';
+
   // Metrics
   $('metrics').innerHTML = [
-    {val:streams.length, lbl:'Stream'},
+    {val:streams.length, lbl: isCloud ? 'Space' : 'Stream'},
     {val:apps.length, lbl:'Uygulama'},
-    {val:totalQvd, lbl:'QVD Tablosu'},
+    {val:totalQvd, lbl: isCloud ? 'Bağlantı' : 'QVD Tablosu'},
     {val:err+warn, lbl:'Dikkat Gerektiren'}
   ].map(m=>`<div class="metric"><div class="metric-val">${m.val}</div><div class="metric-lbl">${m.lbl}</div></div>`).join('');
 
   // Callout
+  const platform = isCloud ? 'Qlik Cloud' : 'Qlik On-Prem';
   const health = err>0?`⚠ ${err} sorunlu, ${warn} uyarılı uygulama var` : warn>0?`${warn} uyarılı uygulama var` : '✓ Tüm uygulamalar sağlıklı';
-  $('summary-callout').innerHTML = `<strong>${customer} — ${project}</strong>${streams.length} stream, ${apps.length} uygulama, ${qvdLayers.length} katmanlı QVD mimarisi. ${health}.`;
+  $('summary-callout').innerHTML = `<strong>${customer} — ${project} <span class="badge badge-${isCloud?'cloud':'ok'}" style="font-size:10px;margin-left:4px">${platform}</span></strong>${streams.length} ${isCloud?'space':'stream'}, ${apps.length} uygulama. ${health}.`;
 
   // Apps table
   window._apps = apps;
   const streamSel = $('stream-filter');
-  streamSel.innerHTML = '<option value="">Tüm stream\'ler</option>';
+  streamSel.innerHTML = `<option value="">Tüm ${isCloud?'space\'ler':'stream\'ler'}</option>`;
   [...new Set(apps.map(a=>a.stream))].forEach(s=>{
     const o=document.createElement('option'); o.value=s; o.textContent=s; streamSel.appendChild(o);
   });
   filterApps();
 
-  // QVD
+  // QVD / Data Sources
   $('qvd-content').innerHTML = qvdLayers.map(layer=>`
     <div class="qvd-layer">
       <div class="qvd-layer-name">${escHtml(layer.name)}</div>
       <div class="qvd-chips">
-        ${layer.tables.length ? layer.tables.map(t=>`<div class="qvd-chip">${escHtml(t.name)}<span class="qvd-size">${t.size}${t.apps!=='-'?' · '+t.apps+' app':''}</span></div>`).join('') : '<span style="color:#aaa;font-size:12px">Tablo tespit edilemedi</span>'}
+        ${layer.tables.length ? layer.tables.map(t=>`<div class="qvd-chip">${escHtml(t.name)}<span class="qvd-size">${t.size!=='-'?t.size:''}${t.apps!=='-'?' · '+t.apps+' app':''}</span></div>`).join('') : '<span style="color:#aaa;font-size:12px">Tablo tespit edilemedi</span>'}
       </div>
     </div>
   `).join('');
@@ -769,14 +1000,6 @@ async function exportWord() {
       children:[new TextRun({text:txt,size:20,color:'333333',font:'Arial'})],
       spacing:{before:40,after:40}
     });
-    const Num = (n,txt) => new Paragraph({
-      children:[
-        new TextRun({text:`${n}.  `,bold:true,size:20,color:TEAL,font:'Arial'}),
-        new TextRun({text:txt,size:20,color:'333333',font:'Arial'})
-      ],
-      spacing:{before:60,after:60},
-      indent:{left:360}
-    });
     const Spacer = pts => new Paragraph({children:[],spacing:{before:0,after:pts||120}});
     const HR = (color,size) => new Paragraph({children:[],border:{bottom:{style:BorderStyle.SINGLE,size:size||4,color:color||'CCCCCC',space:1}},spacing:{before:0,after:0}});
 
@@ -818,7 +1041,8 @@ async function exportWord() {
       const hBords={top:hBord,bottom:hBord,left:b0,right:b0};
       const cBord={style:BorderStyle.SINGLE,size:1,color:'EEEEEE'};
       const cBords={top:cBord,bottom:cBord,left:b0,right:b0};
-      const hRow=new TableRow({children:[['Uygulama',cw[0]],['Stream',cw[1]],['Son Yükleme',cw[2]],['Durum',cw[3]]].map(([t,w])=>
+      const colHeader = state.isCloud ? 'Space' : 'Stream';
+      const hRow=new TableRow({children:[['Uygulama',cw[0]],[colHeader,cw[1]],['Son Yükleme',cw[2]],['Durum',cw[3]]].map(([t,w])=>
         new TableCell({borders:hBords,width:{size:w,type:WidthType.DXA},shading:{fill:NAVY,type:ShadingType.CLEAR},margins:{top:80,bottom:80,left:120,right:120},
           children:[new Paragraph({children:[new TextRun({text:t,bold:true,size:18,color:'FFFFFF',font:'Arial'})]})]})
       )});
@@ -842,6 +1066,8 @@ async function exportWord() {
     const ok=state.apps.filter(a=>a.status==='ok').length;
     const err=state.apps.filter(a=>a.status==='err').length;
     const warn=state.apps.filter(a=>a.status==='warn').length;
+    const platform = state.isCloud ? 'Qlik Sense Cloud' : 'Qlik Sense On-Premises';
+    const groupLabel = state.isCloud ? 'Space' : 'Stream';
 
     const doc2 = new Document({
       numbering:{config:[{reference:'bullets',levels:[{level:0,format:LevelFormat.BULLET,text:'–',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:540,hanging:300}}}}]}]},
@@ -851,7 +1077,7 @@ async function exportWord() {
         headers:{default:new Header({children:[
           new Table({width:{size:9638,type:WidthType.DXA},columnWidths:[7000,2638],rows:[new TableRow({children:[
             new TableCell({borders:{...noBord,bottom:{style:BorderStyle.SINGLE,size:4,color:TEAL}},width:{size:7000,type:WidthType.DXA},margins:{top:0,bottom:60,left:0,right:0},
-              children:[new Paragraph({children:[new TextRun({text:`Proje Durum Analizi — ${state.project}`,size:16,color:'666666',font:'Arial'})]})]}),
+              children:[new Paragraph({children:[new TextRun({text:`Proje Durum Analizi — ${state.project} (${platform})`,size:16,color:'666666',font:'Arial'})]})]}),
             new TableCell({borders:{...noBord,bottom:{style:BorderStyle.SINGLE,size:4,color:TEAL}},width:{size:2638,type:WidthType.DXA},margins:{top:0,bottom:60,left:0,right:0},
               children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:'DQ Türkiye',bold:true,size:16,color:NAVY,font:'Arial'})]})]})
           ]})]})
@@ -861,7 +1087,6 @@ async function exportWord() {
           new TextRun({children:[PageNumber.CURRENT],size:16,color:'666666',font:'Arial'})
         ],border:{top:{style:BorderStyle.SINGLE,size:2,color:'CCCCCC',space:4}}})]})},
         children:[
-          // COVER
           Spacer(1200),
           new Paragraph({children:[new TextRun({text:'DQ',bold:true,size:96,color:TEAL,font:'Arial'})],spacing:{before:0,after:0}}),
           new Paragraph({children:[new TextRun({text:'TÜRKİYE',bold:true,size:40,color:NAVY,font:'Arial'})],spacing:{before:0,after:200}}),
@@ -869,18 +1094,18 @@ async function exportWord() {
           new Paragraph({children:[new TextRun({text:'PROJE DURUM ANALİZİ',bold:true,size:36,color:NAVY,font:'Arial'})],spacing:{before:0,after:120}}),
           new Paragraph({children:[new TextRun({text:state.project,size:28,color:'666666',font:'Arial'})],spacing:{before:0,after:80}}),
           new Paragraph({children:[new TextRun({text:`Müşteri: ${state.customer}`,size:22,color:'666666',font:'Arial'})],spacing:{before:0,after:40}}),
+          new Paragraph({children:[new TextRun({text:`Platform: ${platform}`,size:22,color:'007A87',font:'Arial',bold:true})],spacing:{before:0,after:40}}),
           new Paragraph({children:[new TextRun({text:`Tarih: ${state.date}`,size:22,color:'666666',font:'Arial'})],spacing:{before:0,after:40}}),
           new Paragraph({children:[new TextRun({text:'Gizlilik: Dahili Kullanım',size:20,color:'666666',font:'Arial',italics:true})]}),
           new Paragraph({children:[{type:'pageBreak'}]}),
-          // SECTIONS
           H('1. Yönetici Özeti'), Spacer(80),
           calloutBox('Proje Snapshot',[
-            `${state.customer} – ${state.project}: ${state.streams.length} stream, ${state.apps.length} uygulama`,
-            `QVD mimarisi ${state.qvdLayers.length} katmanlı yapıda`,
+            `${state.customer} – ${state.project} (${platform})`,
+            `${state.streams.length} ${groupLabel}, ${state.apps.length} uygulama`,
             `${ok} sağlıklı, ${warn} uyarılı, ${err} sorunlu uygulama`
           ]),
           Spacer(160),
-          metTbl([{val:state.streams.length,lbl:'Stream'},{val:state.apps.length,lbl:'Uygulama'},{val:totalQvd,lbl:'QVD'},{val:err+warn,lbl:'Dikkat Gerektiren'}]),
+          metTbl([{val:state.streams.length,lbl:groupLabel},{val:state.apps.length,lbl:'Uygulama'},{val:totalQvd,lbl:state.isCloud?'Bağlantı':'QVD'},{val:err+warn,lbl:'Dikkat Gerektiren'}]),
           Spacer(200),
           H('2. AI Analizi'), Spacer(80),
           ...aiParagraphs,
@@ -888,7 +1113,7 @@ async function exportWord() {
           H('3. Uygulama Envanteri'), Spacer(60),
           appTbl(),
           Spacer(120),
-          H('4. QVD Mimarisi'), Spacer(60),
+          H(`4. ${state.isCloud ? 'Veri Kaynakları' : 'QVD Mimarisi'}`), Spacer(60),
           ...state.qvdLayers.flatMap(layer=>[
             H2(layer.name),
             ...(layer.tables.length ? layer.tables.map(t=>Bul(`${t.name}   ${t.size!=='-'?'('+t.size+')':''}`)) : [P('Tablo tespit edilemedi','aaaaaa')]),
@@ -918,25 +1143,36 @@ function exportExcel() {
   try {
     const wb = XLSX.utils.book_new();
     const statusLabel = {ok:'Sağlıklı',warn:'Uyarı',err:'Sorunlu'};
+    const colHeader = state.isCloud ? 'Space' : 'Stream';
 
-    // Sheet 1: Apps
-    const appData = [['Uygulama','Stream','Son Yükleme','Boyut','Durum'],...state.apps.map(a=>[a.name,a.stream,a.lastReload,a.size,statusLabel[a.status]])];
+    const appData = [['Uygulama',colHeader,'Son Yükleme','Boyut','Durum'],...state.apps.map(a=>[a.name,a.stream,a.lastReload,a.size,statusLabel[a.status]])];
     const ws1 = XLSX.utils.aoa_to_sheet(appData);
     ws1['!cols'] = [{wch:40},{wch:14},{wch:14},{wch:10},{wch:12}];
     XLSX.utils.book_append_sheet(wb, ws1, 'Uygulama Envanteri');
 
-    // Sheet 2: QVD
-    const qvdRows = [['Katman','QVD Tablosu','Boyut','Bağımlı App']];
+    const qvdRows = [['Katman/Grup','Bağlantı/Tablo','Boyut','Bağımlı App']];
     state.qvdLayers.forEach(l=>l.tables.forEach(t=>qvdRows.push([l.name,t.name,t.size,t.apps])));
     const ws2 = XLSX.utils.aoa_to_sheet(qvdRows);
     ws2['!cols'] = [{wch:28},{wch:36},{wch:10},{wch:14}];
-    XLSX.utils.book_append_sheet(wb, ws2, 'QVD Mimarisi');
+    XLSX.utils.book_append_sheet(wb, ws2, state.isCloud ? 'Veri Kaynakları' : 'QVD Mimarisi');
 
-    // Sheet 3: Özet
     const ok=state.apps.filter(a=>a.status==='ok').length;
     const warn=state.apps.filter(a=>a.status==='warn').length;
     const err=state.apps.filter(a=>a.status==='err').length;
-    const sumData=[['Müşteri',state.customer],['Proje',state.project],['Analiz Tarihi',state.date],[''],['Stream Sayısı',state.streams.length],['Uygulama Sayısı',state.apps.length],['QVD Tablosu',state.qvdLayers.reduce((s,l)=>s+l.tables.length,0)],[''],['Sağlıklı App',ok],['Uyarılı App',warn],['Sorunlu App',err]];
+    const sumData=[
+      ['Müşteri',state.customer],
+      ['Proje',state.project],
+      ['Platform', state.isCloud ? 'Qlik Sense Cloud' : 'Qlik Sense On-Premises'],
+      ['Analiz Tarihi',state.date],
+      [''],
+      [`${colHeader} Sayısı`,state.streams.length],
+      ['Uygulama Sayısı',state.apps.length],
+      [state.isCloud ? 'Veri Bağlantısı' : 'QVD Tablosu',state.qvdLayers.reduce((s,l)=>s+l.tables.length,0)],
+      [''],
+      ['Sağlıklı App',ok],
+      ['Uyarılı App',warn],
+      ['Sorunlu App',err]
+    ];
     const ws3 = XLSX.utils.aoa_to_sheet(sumData);
     ws3['!cols'] = [{wch:22},{wch:30}];
     XLSX.utils.book_append_sheet(wb, ws3, 'Özet');
@@ -955,10 +1191,13 @@ function exportBrief() {
   const totalQvd = state.qvdLayers.reduce((s,l)=>s+l.tables.length,0);
   const errApps = state.apps.filter(a=>a.status==='err').map(a=>a.name);
   const warnApps = state.apps.filter(a=>a.status==='warn').map(a=>a.name);
+  const platform = state.isCloud ? 'Qlik Sense Cloud' : 'Qlik Sense On-Premises';
+  const groupLabel = state.isCloud ? 'Space' : 'Stream';
   const brief = `# DQ TÜRKİYE — DANIŞMAN HANDOVER BRIEF
 Müşteri: ${state.customer}
 Proje: ${state.project}
-Sunucu: ${state.host||'Demo'}
+Platform: ${platform}
+Sunucu/Tenant: ${state.host||'Demo'}
 Analiz tarihi: ${state.date}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -968,9 +1207,9 @@ ${state.aiText}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ## HIZLI METRİKLER
-Stream: ${state.streams.map(s=>s.name+'('+s.count+')').join(', ')}
+${groupLabel}: ${state.streams.map(s=>s.name+'('+s.count+')').join(', ')}
 Toplam app: ${state.apps.length}
-QVD tablosu: ${totalQvd}
+Veri bağlantısı/QVD: ${totalQvd}
 Sorunlu app: ${errApps.join(', ')||'yok'}
 Uyarılı app: ${warnApps.join(', ')||'yok'}
 
@@ -982,7 +1221,7 @@ Bu brief'i yeni bir Claude konuşmasına yapıştır ve şunu söyle:
   const blob = new Blob([brief], {type:'text/plain;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href=url; a.download=`brief_${state.customer}_${state.project}.txt`.replace(/\s+/g,'_'); a.click();
-  $('export-msg').textContent = '✓ Brief indirildi. Yeni bir Claude konuşmasına yapıştırabilirsiniz.';
+  $('export-msg').textContent = '✓ Brief indirildi.';
 }
 
 /* ─────────────── DOWNLOAD HELPER ─────────────── */
