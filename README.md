@@ -1,100 +1,166 @@
 # DQ Türkiye — Qlik Proje Analizörü
 
-Qlik Sense on-prem projeleri için otomatik durum analizi aracı. QRS API'ye bağlanarak app envanteri, QVD mimarisi ve AI destekli danışman brief'i üretir.
+Qlik Sense projelerini otomatik olarak analiz eden, **On-Premises** ve **Qlik Cloud** ortamlarını destekleyen tek dosyalık web uygulaması. App envanteri, veri mimarisi ve AI destekli danışman brief'i üretir.
 
-## 🚀 GitHub Pages'e Deploy
+---
 
-### 1. Repo oluştur
-```bash
-# GitHub'da yeni repo aç: qlik-analyzer (public)
-git clone https://github.com/KULLANICI_ADIN/qlik-analyzer.git
-cd qlik-analyzer
+## 🚀 Kurulum
+
+### IIS ile Yayına Alma (Önerilen)
+
+Uygulamayı kendi sunucunuzda IIS üzerinden yayınlayarak müşterilerin kurumsal ağlarından erişimini kolaylaştırabilirsiniz.
+
+**1. IIS'te yeni site oluşturun**
+
+- IIS Manager → **Sites** → **Add Website**
+- Site name: `qlik-analyzer`
+- Physical path: `C:\inetpub\wwwroot\qlik-analyzer`
+- Port: `80` (veya SSL için `443`)
+- **OK**
+
+**2. Dosyayı kopyalayın**
+
+```
+C:\inetpub\wwwroot\qlik-analyzer\
+└── index.html
 ```
 
-### 2. Dosyaları kopyala
+**3. SSL (Önerilen)**
+
+Sertifikanızı IIS'e bağlayın ve `https://analiz.dqturkiye.com` gibi bir adresle yayına alın. Müşteri IT ekipleri `github.io` yerine bu domaini açar.
+
+**4. Güncelleme**
+
+Tek dosya olduğu için güncelleme basittir — yeni `index.html`'i klasöre yapıştırmanız yeterlidir.
+
+---
+
+### GitHub Pages ile Yayına Alma
+
 ```bash
-cp index.html qlik-analyzer/
+# Repo oluştur ve dosyayı yükle
+git clone https://github.com/KULLANICI_ADIN/qlik-analyzer.git
 cd qlik-analyzer
+cp index.html .
 git add index.html
-git commit -m "feat: Qlik Proje Analizörü v1.0"
+git commit -m "feat: Qlik Proje Analizörü"
 git push origin main
 ```
 
-### 3. GitHub Pages aç
-- Repo → **Settings** → **Pages**
-- Source: **Deploy from a branch**
-- Branch: `main` / `/ (root)`
-- **Save**
+- Repo → **Settings** → **Pages** → Branch: `main` / `/(root)` → **Save**
+- 5 dakika sonra `https://KULLANICI_ADIN.github.io/qlik-analyzer` adresinde yayında
 
-5 dakika sonra `https://KULLANICI_ADIN.github.io/qlik-analyzer` adresinde yayında.
+> ⚠️ Kurumsal ağlarda `github.io` domaini firewall tarafından engellenebilir. Bu durumda IIS veya Vercel tercih edilmelidir.
+
+---
+
+### Vercel ile Yayına Alma
+
+1. [vercel.com](https://vercel.com)'a girin, GitHub ile bağlayın
+2. `qlik-analyzer` reposunu seçip deploy edin
+3. İsteğe bağlı olarak kendi domaininizi bağlayın
 
 ---
 
 ## ⚙️ Kullanım
 
-### Gerçek QRS API
-1. Qlik Sense sunucunuzda CORS'u açın (aşağıya bakın)
-2. Sunucu adresi ve kullanıcı bilgilerini girin
-3. Anthropic API key'i girin ([console.anthropic.com](https://console.anthropic.com))
-4. **Analizi Başlat**'a tıklayın
+### Bağlantı Türü Seçimi
 
-### Demo Mod
-API key veya QRS bağlantısı olmadan: **Demo veriyle test et** butonunu kullanın.
+Uygulamada sidebar'da **On-Premises** ve **Qlik Cloud** arasında geçiş yapabilirsiniz.
 
 ---
 
-## 🔧 QRS API — CORS Konfigürasyonu
+### 🖥 On-Premises (QRS API)
 
-Qlik Sense on-prem'de tarayıcıdan QRS API'ye erişim için CORS ayarı gerekir.
+| Alan | Açıklama |
+|---|---|
+| Sunucu adresi | `https://qlik.sirket.com` |
+| Port | `4242` (varsayılan) |
+| Kullanıcı | `DOMAIN\qlik_service` formatında |
 
-### QMC üzerinden
+**CORS Konfigürasyonu**
+
+Tarayıcıdan QRS API'ye erişim için Qlik Sense sunucusunda CORS açık olmalıdır:
+
 1. QMC → **Virtual Proxies** → proxy seçin → **Edit**
 2. **Additional response headers** alanına ekleyin:
+
 ```
-Access-Control-Allow-Origin: https://KULLANICI_ADIN.github.io
+Access-Control-Allow-Origin: https://analiz.dqturkiye.com
 Access-Control-Allow-Headers: X-Qlik-Xrfkey, X-Qlik-User, Content-Type
 Access-Control-Allow-Methods: GET, POST, OPTIONS
 ```
+
 3. **Apply**
 
-### Alternatif: Local Proxy
-CORS kısıtlaması varsa basit bir Node.js proxy kullanabilirsiniz:
-```bash
-npx cors-anywhere
-# Sonra arayüzde sunucu adresini http://localhost:8080/https://qlik-server.com olarak girin
-```
+---
+
+### ☁️ Qlik Cloud
+
+| Alan | Açıklama |
+|---|---|
+| Tenant URL | `https://sirket.eu.qlikcloud.com` |
+| API Token | Profil → API Keys → Token oluştur |
+
+**API Token Nasıl Alınır**
+
+1. Qlik Cloud → sağ üst köşede profil ikonuna tıklayın
+2. **Profile settings** → **API Keys**
+3. **Generate new key** → tokeni kopyalayıp uygulamaya yapıştırın
+
+**Cloud ile çekilen veriler:**
+- Space listesi ve app envanteri
+- Veri bağlantıları (QVD, veritabanı, vs.)
+- Reload task durumları
+
+---
+
+### Demo Mod
+
+API key veya bağlantı olmadan: **Demo veriyle test et** butonunu kullanın. Her iki mod için de demo verisi mevcuttur.
 
 ---
 
 ## 📦 Özellikler
 
-| Özellik | Açıklama |
-|---------|----------|
-| **QRS API** | Stream, app listesi, son yükleme, boyut |
-| **Sağlık skorlaması** | 30+ gün = Sorunlu, 7-30 gün = Uyarı |
-| **Claude AI analizi** | Danışman handover brief (Anthropic API) |
-| **Word raporu** | McKinsey tarzı .docx, tablo + metrikler |
-| **Excel envanteri** | 3 sheet: App listesi, QVD, Özet |
-| **Danışman brief** | .txt, Claude'a yapıştırılabilir context |
+| Özellik | On-Premises | Cloud |
+|---|---|---|
+| App envanteri | ✅ QRS API | ✅ Cloud API |
+| Stream / Space listesi | ✅ Stream | ✅ Space |
+| Veri bağlantıları | ✅ QVD tespiti | ✅ Data connections |
+| Reload task analizi | ✅ | ✅ |
+| Sağlık skorlaması | ✅ | ✅ |
+| Claude AI analizi | ✅ | ✅ |
+| Word raporu | ✅ | ✅ |
+| Excel envanteri | ✅ | ✅ |
+| Danışman brief | ✅ | ✅ |
+
+**Sağlık skorlama kriterleri:**
+- 🟢 **Sağlıklı** — Son 7 gün içinde yüklenmiş
+- 🟡 **Uyarı** — 7–30 gün arası
+- 🔴 **Sorunlu** — 30+ gün yüklenmemiş
 
 ---
 
 ## 🔑 API Key Güvenliği
 
-- Anthropic API key **tarayıcıda tutulur**, sunucuya gönderilmez
-- Her oturumda tekrar girmeniz gerekir (localStorage kullanılmaz)
-- Production kullanım için API key'i backend proxy'ye taşıyın
+- Anthropic API key **yalnızca tarayıcıda** tutulur, sunucuya gönderilmez
+- Her oturumda yeniden girilmesi gerekir
+- Qlik Cloud token da aynı şekilde yalnızca tarayıcı oturumunda saklanır
+- Production kullanım için API key'leri backend proxy üzerinden yönetmek tavsiye edilir
 
 ---
 
 ## 🏗️ Teknik Yapı
 
 ```
-index.html          ← tek dosya, zero-dependency
-├── QRS API         ← fetch() ile doğrudan bağlantı
-├── Claude AI       ← api.anthropic.com/v1/messages
-├── docx (CDN)      ← Word üretimi (cdnjs)
-└── xlsx (CDN)      ← Excel üretimi (cdnjs)
+index.html                  ← tek dosya, sıfır bağımlılık
+├── Bağlantı katmanı
+│   ├── QRS API             ← On-Premises (fetch + XRF auth)
+│   └── Qlik Cloud API      ← /api/v1 (Bearer token, sayfalama)
+├── Claude AI               ← api.anthropic.com/v1/messages
+├── docx (CDN)              ← Word üretimi
+└── xlsx (CDN)              ← Excel üretimi
 ```
 
 ---
