@@ -186,7 +186,7 @@
     <span class="logo-dq">DQ</span>
     <div>
       <div style="color:white;font-size:14px;font-weight:600;line-height:1">TÜRKİYE</div>
-      <div class="logo-txt">Qlik Proje Analizörü <span style="opacity:.5;font-size:10px">v1.2</span></div>
+      <div class="logo-txt">Qlik Proje Analizörü <span style="opacity:.5;font-size:10px">v1.3</span></div>
     </div>
   </div>
   <a class="gh-badge" href="https://github.com/ikarusas/qlik-analyzer" target="_blank">
@@ -668,28 +668,39 @@ async function fetchCloudData(tenantUrl, token) {
   }
   await sleep(150);
 
-  // Apps
+  // Apps — /api/v1/apps returns {data:[{attributes:{...}},...]}
   log('Uygulama listesi çekiliyor...', 'info');
-  const apps = await fetchCloudPaged(tenantUrl, token, '/apps');
-  log(`✓ ${apps.length} uygulama bulundu`, 'ok');
+  const appsRaw = await fetchCloudPaged(tenantUrl, token, '/apps');
+  log(`✓ ${appsRaw.length} uygulama bulundu`, 'ok');
   await sleep(150);
 
   // Space map
   const spaceMap = {};
   spaces.forEach(s => { spaceMap[s.id] = s.name; });
 
-  // Map apps
+  // Qlik Cloud /api/v1/apps wraps attributes under a.attributes
+  const apps = appsRaw.map(a => a.attributes || a);
+
+  // Debug: log first app keys
+  if (apps.length > 0) {
+    log(`App örnek alanlar: ${Object.keys(apps[0]).slice(0,8).join(', ')}`, 'info');
+  }
+
   const mappedApps = apps.map(a => {
-    const lastReload = a.lastReloadTime || a.updatedAt || null;
+    // Try all known field name variants
+    const name = a.name || a.title || a.resourceAttributes?.name || a.resourceName || 'İsimsiz';
+    const spaceId = a.spaceId || a.resourceAttributes?.spaceId || null;
+    const lastReload = a.lastReloadTime || a.updatedAt || a.lastUpdatedAt || null;
     const reloadDate = lastReload ? new Date(lastReload) : null;
     const daysAgo = reloadDate ? Math.floor((Date.now()-reloadDate)/86400000) : 999;
     const status = daysAgo > 30 ? 'err' : daysAgo > 7 ? 'warn' : 'ok';
-    const spaceName = spaceMap[a.spaceId] || (a.spaceId ? a.spaceId : 'Personal Space');
+    const spaceName = spaceMap[spaceId] || (spaceId ? spaceId : 'Personal Space');
+    const fileSize = a.usage?.appFile || a.fileSize || null;
     return {
-      name: a.name,
+      name,
       stream: spaceName,
       lastReload: reloadDate ? reloadDate.toLocaleDateString('tr-TR') : '-',
-      size: a.usage?.appFile ? sizeStr(a.usage.appFile) : '-',
+      size: fileSize ? sizeStr(fileSize) : '-',
       status,
       publishedDate: lastReload,
       isCloud: true,
@@ -708,28 +719,35 @@ async function fetchCloudData(tenantUrl, token) {
   try {
     const conns = await fetchCloudPaged(tenantUrl, token, '/data-connections');
     log(`✓ ${conns.length} veri bağlantısı tespit edildi`, 'ok');
+    // Debug first connection keys
+    if (conns.length > 0) {
+      log(`Bağlantı örnek alanlar: ${Object.keys(conns[0]).slice(0,8).join(', ')}`, 'info');
+    }
+    // Qlik Cloud data-connections: name, datasourceID, space, type fields
+    const getName = c => c.name || c.datasourceID || c.id || 'Bilinmiyor';
+    const getType = c => c.datasourceID || c.type || c.provider || '';
     const qvdConns = conns.filter(c =>
-      (c.datasourceID||'').toLowerCase().includes('qvd') ||
-      (c.datasourceID||'').toLowerCase().includes('folder') ||
-      (c.qri||'').toLowerCase().includes('qvd')
+      getType(c).toLowerCase().includes('qvd') ||
+      getType(c).toLowerCase().includes('folder') ||
+      getName(c).toLowerCase().includes('qvd')
     );
     const otherConns = conns.filter(c => !qvdConns.includes(c));
     qvdLayers = [];
     if (qvdConns.length) {
-      qvdLayers.push({name:'QVD / Dosya Bağlantıları', key:'qvd', tables: qvdConns.slice(0,12).map(c=>({
-        name: c.name || c.datasourceID || 'Bilinmiyor',
+      qvdLayers.push({name:'QVD / Dosya Bağlantıları', key:'qvd', tables: qvdConns.slice(0,20).map(c=>({
+        name: getName(c),
         size: '-', apps: '-'
       }))});
     }
     if (otherConns.length) {
-      qvdLayers.push({name:'Diğer Veri Kaynakları', key:'other', tables: otherConns.slice(0,12).map(c=>({
-        name: `${c.name || 'Bilinmiyor'} (${c.datasourceID || '-'})`,
+      qvdLayers.push({name:'Diğer Veri Kaynakları', key:'other', tables: otherConns.slice(0,20).map(c=>({
+        name: `${getName(c)}${getType(c) ? ' ('+getType(c)+')' : ''}`,
         size: '-', apps: '-'
       }))});
     }
     if (!qvdLayers.length) {
-      qvdLayers = [{name:'Veri Bağlantıları', key:'all', tables: conns.slice(0,12).map(c=>({
-        name: c.name || c.datasourceID || 'Bilinmiyor', size:'-', apps:'-'
+      qvdLayers = [{name:'Veri Bağlantıları', key:'all', tables: conns.slice(0,20).map(c=>({
+        name: getName(c), size:'-', apps:'-'
       }))}];
     }
   } catch(e) {
