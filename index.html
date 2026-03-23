@@ -616,7 +616,8 @@ async function fetchCloud(tenantUrl, token, path, params='') {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'qlik-web-integration-id': 'ACZejuJmPyTHCQYREf38gdCTJoTATA0v'
       }
     });
   } catch(e) {
