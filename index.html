@@ -186,7 +186,7 @@
     <span class="logo-dq">DQ</span>
     <div>
       <div style="color:white;font-size:14px;font-weight:600;line-height:1">TÜRKİYE</div>
-      <div class="logo-txt">Qlik Proje Analizörü</div>
+      <div class="logo-txt">Qlik Proje Analizörü <span style="opacity:.5;font-size:10px">v1.2</span></div>
     </div>
   </div>
   <a class="gh-badge" href="https://github.com/ikarusas/qlik-analyzer" target="_blank">
@@ -654,6 +654,7 @@ async function fetchCloudPaged(tenantUrl, token, path) {
 async function fetchCloudData(tenantUrl, token) {
   log(`Qlik Cloud bağlanıyor: ${tenantUrl}`, 'info');
   log(`Token uzunluğu: ${token.length} karakter`, 'info');
+  log(`Token başlangıcı: ${token.slice(0,20)}...`, 'info');
 
   // Spaces (stream karşılığı)
   log('Space listesi çekiliyor...', 'info');
